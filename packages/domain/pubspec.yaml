@@ -1,0 +1,8 @@
+name: domain
+description: Domen sistema za Erasmus prijave. Model, stanja i pravila koje koriste sve aplikacije i server.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
