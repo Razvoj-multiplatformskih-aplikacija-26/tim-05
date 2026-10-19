@@ -1,3 +1,9 @@
 export 'src/greske.dart';
 export 'src/identifikatori.dart';
+export 'src/jezik.dart';
+export 'src/korisnik.dart';
+export 'src/ponuda/ponuda.dart';
+export 'src/ponuda/semestar.dart';
 export 'src/rezultat.dart';
+export 'src/student.dart';
+export 'src/univerzitet.dart';

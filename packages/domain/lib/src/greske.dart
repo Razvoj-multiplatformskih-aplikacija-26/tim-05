@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'jezik.dart';
 
 sealed class GreskaDomena {
   const GreskaDomena();
@@ -59,6 +60,25 @@ final class NedovoljanProsek extends GreskaDomena {
 
   @override
   String toString() => 'NedovoljanProsek(trazeni: $trazeni, studentov: $studentov)';
+}
+
+@immutable
+final class NedovoljanJezik extends GreskaDomena {
+  const NedovoljanJezik({required this.trazeni, this.studentov});
+
+  final ZahtevJezika trazeni;
+
+  final NivoJezika? studentov;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NedovoljanJezik && other.trazeni == trazeni && other.studentov == studentov;
+
+  @override
+  int get hashCode => Object.hash(NedovoljanJezik, trazeni, studentov);
+
+  @override
+  String toString() => 'NedovoljanJezik(trazeni: $trazeni, studentov: ${studentov?.oznaka})';
 }
 
 @immutable
