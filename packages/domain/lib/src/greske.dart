@@ -1,5 +1,6 @@
 import 'package:meta/meta.dart';
 import 'jezik.dart';
+import 'prijava/stanje_prijave.dart';
 
 sealed class GreskaDomena {
   const GreskaDomena();
@@ -109,4 +110,23 @@ final class NemaPravo extends GreskaDomena {
 
 final class NijePronadjeno extends GreskaDomena {
   const NijePronadjeno();
+}
+
+
+@immutable
+final class NedozvoljenPrelaz extends GreskaDomena {
+  const NedozvoljenPrelaz({required this.iz, required this.u});
+
+  final StanjePrijave iz;
+  final StanjePrijave u;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NedozvoljenPrelaz && other.iz.runtimeType == iz.runtimeType && other.u.runtimeType == u.runtimeType;
+
+  @override
+  int get hashCode => Object.hash(NedozvoljenPrelaz, iz.runtimeType, u.runtimeType);
+
+  @override
+  String toString() => 'NedozvoljenPrelaz(${iz.runtimeType} -> ${u.runtimeType})';
 }

@@ -8,4 +8,5 @@ environment:
 resolution: workspace
 
 dependencies:
+  characters: ^1.4.0
   meta: ^1.16.0
