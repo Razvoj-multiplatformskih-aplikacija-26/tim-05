@@ -6,3 +6,7 @@ version: 0.1.0
 environment:
   sdk: ^3.13.0
 resolution: workspace
+
+dependencies:
+  characters: ^1.4.0
+  meta: ^1.16.0
