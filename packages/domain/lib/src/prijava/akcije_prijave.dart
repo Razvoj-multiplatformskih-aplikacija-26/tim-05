@@ -10,17 +10,13 @@ import 'prava_pristupa.dart';
 import 'prijava.dart';
 import 'stanje_prijave.dart';
 
-
-
 Rezultat<Prijava> _prelaz(Prijava prijava, StanjePrijave novo) {
-
   if (!dozvoljenPrelaz(prijava.stanje, novo)) {
     return Neuspeh(NedozvoljenPrelaz(iz: prijava.stanje, u: novo));
   }
 
   return Uspeh(prijava.copyWith(stanje: novo));
 }
-
 
 Rezultat<Prijava> posaljiPrijavu(
   Prijava prijava, {
@@ -30,7 +26,6 @@ Rezultat<Prijava> posaljiPrijavu(
   required List<Prijava> svePrijave,
   required DateTime sada,
 }) {
-
   if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
 
   final novo = Poslata(kada: sada);
@@ -52,7 +47,6 @@ Rezultat<Prijava> izmeniPrijavu(
   required MotivacionoPismo motivacionoPismo,
   String? napomena,
 }) {
-
   if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
 
   final smeDaMenja = switch (prijava.stanje) {
@@ -65,27 +59,26 @@ Rezultat<Prijava> izmeniPrijavu(
   return Uspeh(prijava.copyWith(motivacionoPismo: motivacionoPismo, napomena: napomena));
 }
 
-
 Rezultat<Prijava> povuciPrijavu(Prijava prijava, {required Korisnik ko, required DateTime sada}) {
-
   if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
 
   return _prelaz(prijava, Povucena(kada: sada));
 }
 
-
 Rezultat<Prijava> odbijMesto(Prijava prijava, {required Korisnik ko, required DateTime sada}) {
-
   if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
 
   if (prijava.stanje is! Prihvacena) {
-    return Neuspeh(NedozvoljenPrelaz(iz: prijava.stanje, u: Povucena(kada: sada)));
+    return Neuspeh(
+      NedozvoljenPrelaz(
+        iz: prijava.stanje,
+        u: Povucena(kada: sada),
+      ),
+    );
   }
 
   return _prelaz(prijava, Povucena(kada: sada));
 }
-
-
 
 Rezultat<List<Prijava>> potvrdiMesto(
   Prijava prijava, {
@@ -93,7 +86,6 @@ Rezultat<List<Prijava>> potvrdiMesto(
   required List<Prijava> svePrijave,
   required DateTime sada,
 }) {
-
   if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
 
   final potvrdjena = _prelaz(prijava, Potvrdjena(kada: sada));
@@ -111,8 +103,6 @@ Rezultat<List<Prijava>> potvrdiMesto(
   return Uspeh([potvrdjena.vrednostIliNull!, ...ostale]);
 }
 
-
-
 Rezultat<Prijava> prihvatiPrijavu(
   Prijava prijava, {
   required Korisnik ko,
@@ -120,11 +110,10 @@ Rezultat<Prijava> prihvatiPrijavu(
   required List<Prijava> svePrijave,
   required DateTime sada,
 }) {
-
   if (!PravaPristupa.mozeDaOdlucuje(ko, ponuda) || prijava.idPonude != ponuda.id) {
     return const Neuspeh(NemaPravo());
   }
-  
+
   final novo = Prihvacena(odlucio: ko.id, kada: sada);
 
   if (!dozvoljenPrelaz(prijava.stanje, novo)) {
@@ -136,21 +125,18 @@ Rezultat<Prijava> prihvatiPrijavu(
   return Uspeh(prijava.copyWith(stanje: novo));
 }
 
-
 Rezultat<Prijava> staviNaListuCekanja(
   Prijava prijava, {
   required Korisnik ko,
   required Ponuda ponuda,
   required DateTime sada,
 }) {
-
   if (!PravaPristupa.mozeDaOdlucuje(ko, ponuda) || prijava.idPonude != ponuda.id) {
     return const Neuspeh(NemaPravo());
   }
 
   return _prelaz(prijava, NaListiCekanja(odlucio: ko.id, kada: sada));
 }
-
 
 Rezultat<Prijava> odbijPrijavu(
   Prijava prijava, {
@@ -159,10 +145,9 @@ Rezultat<Prijava> odbijPrijavu(
   required String razlog,
   required DateTime sada,
 }) {
-  
   if (!PravaPristupa.mozeDaOdlucuje(ko, ponuda) || prijava.idPonude != ponuda.id) {
     return const Neuspeh(NemaPravo());
   }
-  
+
   return _prelaz(prijava, Odbijena(odlucio: ko.id, kada: sada, razlog: razlog));
 }

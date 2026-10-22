@@ -14,4 +14,3 @@ export 'src/prijava/stanje_prijave.dart';
 export 'src/rezultat.dart';
 export 'src/student.dart';
 export 'src/univerzitet.dart';
-

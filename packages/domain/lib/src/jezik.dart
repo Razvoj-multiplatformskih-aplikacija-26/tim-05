@@ -1,6 +1,5 @@
 import 'package:meta/meta.dart';
 
-
 enum Jezik { engleski, nemacki, francuski, italijanski, spanski, portugalski, svedski }
 
 enum NivoJezika {
@@ -12,7 +11,6 @@ enum NivoJezika {
   c2;
 
   String get oznaka => name.toUpperCase();
-
 
   bool jeNajmanje(NivoJezika trazeni) => index >= trazeni.index;
 }

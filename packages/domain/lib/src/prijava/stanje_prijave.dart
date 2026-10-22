@@ -2,7 +2,6 @@ import 'package:meta/meta.dart';
 
 import '../identifikatori.dart';
 
-
 sealed class StanjePrijave {
   const StanjePrijave();
 
@@ -124,7 +123,6 @@ final class Povucena extends StanjePrijave {
   @override
   String toString() => 'Povucena($kada)';
 }
-
 
 bool dozvoljenPrelaz(StanjePrijave iz, StanjePrijave u) => switch ((iz, u)) {
   (UPripremi(), Poslata()) => true,
