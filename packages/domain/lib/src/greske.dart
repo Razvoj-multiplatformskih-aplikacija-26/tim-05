@@ -130,3 +130,8 @@ final class NedozvoljenPrelaz extends GreskaDomena {
   @override
   String toString() => 'NedozvoljenPrelaz(${iz.runtimeType} -> ${u.runtimeType})';
 }
+
+
+final class IzmenaNijeMoguca extends GreskaDomena {
+  const IzmenaNijeMoguca();
+}
