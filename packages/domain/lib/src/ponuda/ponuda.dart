@@ -4,7 +4,6 @@ import '../identifikatori.dart';
 import '../jezik.dart';
 import 'semestar.dart';
 
-
 @immutable
 final class Ponuda {
   const Ponuda({

@@ -4,7 +4,6 @@ import 'package:meta/meta.dart';
 import '../greske.dart';
 import '../rezultat.dart';
 
-
 @immutable
 final class MotivacionoPismo {
   const MotivacionoPismo._(this.tekst);

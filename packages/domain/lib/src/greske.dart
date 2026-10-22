@@ -1,12 +1,11 @@
 import 'package:meta/meta.dart';
+
 import 'jezik.dart';
 import 'prijava/stanje_prijave.dart';
 
 sealed class GreskaDomena {
   const GreskaDomena();
 }
-
-
 
 final class PismoPrazno extends GreskaDomena {
   const PismoPrazno();
@@ -27,7 +26,6 @@ final class PismoPredugacko extends GreskaDomena {
   @override
   String toString() => 'PismoPredugacko($duzina)';
 }
-
 
 @immutable
 final class RokIstekao extends GreskaDomena {
@@ -98,11 +96,9 @@ final class PrevisePrijava extends GreskaDomena {
   String toString() => 'PrevisePrijava($najvise)';
 }
 
-
 final class NemaSlobodnihMesta extends GreskaDomena {
   const NemaSlobodnihMesta();
 }
-
 
 final class NemaPravo extends GreskaDomena {
   const NemaPravo();
@@ -111,7 +107,6 @@ final class NemaPravo extends GreskaDomena {
 final class NijePronadjeno extends GreskaDomena {
   const NijePronadjeno();
 }
-
 
 @immutable
 final class NedozvoljenPrelaz extends GreskaDomena {
@@ -129,4 +124,8 @@ final class NedozvoljenPrelaz extends GreskaDomena {
 
   @override
   String toString() => 'NedozvoljenPrelaz(${iz.runtimeType} -> ${u.runtimeType})';
+}
+
+final class IzmenaNijeMoguca extends GreskaDomena {
+  const IzmenaNijeMoguca();
 }
