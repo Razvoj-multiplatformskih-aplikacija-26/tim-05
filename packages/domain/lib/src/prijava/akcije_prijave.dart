@@ -49,12 +49,7 @@ Rezultat<Prijava> izmeniPrijavu(
 }) {
   if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
 
-  final smeDaMenja = switch (prijava.stanje) {
-    UPripremi() || Poslata() => true,
-    NaListiCekanja() || Prihvacena() || Odbijena() || Potvrdjena() || Povucena() => false,
-  };
-
-  if (!smeDaMenja) return const Neuspeh(IzmenaNijeMoguca());
+  if (!prijava.stanje.mozeSeMenjati) return const Neuspeh(IzmenaNijeMoguca());
 
   return Uspeh(prijava.copyWith(motivacionoPismo: motivacionoPismo, napomena: napomena));
 }

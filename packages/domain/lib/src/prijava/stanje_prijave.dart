@@ -10,6 +10,11 @@ sealed class StanjePrijave {
     UPripremi() || Odbijena() || Potvrdjena() || Povucena() => false,
   };
 
+  bool get mozeSeMenjati => switch (this) {
+    UPripremi() || Poslata() => true,
+    NaListiCekanja() || Prihvacena() || Odbijena() || Potvrdjena() || Povucena() => false,
+  };
+
   bool get jeKonacno => switch (this) {
     Odbijena() || Potvrdjena() || Povucena() => true,
     UPripremi() || Poslata() || NaListiCekanja() || Prihvacena() => false,

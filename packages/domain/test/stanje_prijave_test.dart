@@ -45,5 +45,15 @@ void main() {
       expect(Potvrdjena(kada: sada).jeAktivna, isFalse);
       expect(Povucena(kada: sada).jeAktivna, isFalse);
     });
+
+        test('menjati se može samo prijava u pripremi i poslata', () {
+      expect(const UPripremi().mozeSeMenjati, isTrue);
+      expect(Poslata(kada: sada).mozeSeMenjati, isTrue);
+      expect(NaListiCekanja(odlucio: koordinatorMilano.id, kada: sada).mozeSeMenjati, isFalse);
+      expect(Prihvacena(odlucio: koordinatorMilano.id, kada: sada).mozeSeMenjati, isFalse);
+      expect(Odbijena(odlucio: koordinatorMilano.id, kada: sada, razlog: 'test').mozeSeMenjati, isFalse);
+      expect(Potvrdjena(kada: sada).mozeSeMenjati, isFalse);
+      expect(Povucena(kada: sada).mozeSeMenjati, isFalse);
+    });
   });
 }
