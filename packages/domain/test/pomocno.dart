@@ -19,7 +19,7 @@ const koordinatorBec = Korisnik(
   idUniverziteta: IdUniverziteta('u-tuwien'),
 );
 
-const studentIvona = Student(
+const studentAndrej = Student(
   id: IdKorisnika('s-1'),
   ime: 'Andrej',
   prezime: 'Aleksić',

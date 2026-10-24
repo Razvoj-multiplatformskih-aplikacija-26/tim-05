@@ -6,14 +6,14 @@ import 'pomocno.dart';
 void main() {
   group('Uslovi ponude (rok, prosek, jezik, najvise 3 aktivne)', () {
     test('student koji ispunjava sve uslove prolazi', () {
-      final rezultat = proveriUslove(student: studentIvona, ponuda: ponuda(), svePrijave: const [], sada: sada);
+      final rezultat = proveriUslove(student: studentAndrej, ponuda: ponuda(), svePrijave: const [], sada: sada);
       expect(rezultat.jeUspeh, isTrue);
     });
 
     test('P1: posle roka prijava nije moguca', () {
       final rok = DateTime(2026, 10, 31);
       final rezultat = proveriUslove(
-        student: studentIvona,
+        student: studentAndrej,
         ponuda: ponuda(rok: rok),
         svePrijave: const [],
         sada: sada,
@@ -23,7 +23,7 @@ void main() {
 
     test('P2: prosek nizi od trazenog', () {
       final rezultat = proveriUslove(
-        student: studentIvona,
+        student: studentAndrej,
         ponuda: ponuda(minimalniProsek: 9.0),
         svePrijave: const [],
         sada: sada,
@@ -33,7 +33,7 @@ void main() {
 
     test('P3: student nema jezik ponude u profilu', () {
       final rezultat = proveriUslove(
-        student: studentIvona,
+        student: studentAndrej,
         ponuda: ponuda(jezik: Jezik.italijanski, nivo: NivoJezika.b1),
         svePrijave: const [],
         sada: sada,
@@ -48,7 +48,7 @@ void main() {
 
     test('P3: nivo jezika nizi od trazenog', () {
       final rezultat = proveriUslove(
-        student: studentIvona,
+        student: studentAndrej,
         ponuda: ponuda(nivo: NivoJezika.c1),
         svePrijave: const [],
         sada: sada,
@@ -81,7 +81,7 @@ void main() {
         ),
       ];
       final rezultat = proveriUslove(
-        student: studentIvona,
+        student: studentAndrej,
         ponuda: ponuda(id: 'po-4'),
         svePrijave: tri,
         sada: sada,
@@ -104,7 +104,7 @@ void main() {
           stanje: Povucena(kada: sada),
         ),
       ];
-      final rezultat = proveriUslove(student: studentIvona, ponuda: ponuda(), svePrijave: neaktivne, sada: sada);
+      final rezultat = proveriUslove(student: studentAndrej, ponuda: ponuda(), svePrijave: neaktivne, sada: sada);
       expect(rezultat.jeUspeh, isTrue);
     });
   });

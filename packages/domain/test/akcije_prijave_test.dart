@@ -9,7 +9,7 @@ void main() {
       final rezultat = posaljiPrijavu(
         prijava(),
         ko: andrej,
-        student: studentIvona,
+        student: studentAndrej,
         ponuda: ponuda(),
         svePrijave: const [],
         sada: sada,
@@ -21,7 +21,7 @@ void main() {
       final rezultat = posaljiPrijavu(
         prijava(idStudenta: 's-2'),
         ko: andrej,
-        student: studentIvona,
+        student: studentAndrej,
         ponuda: ponuda(),
         svePrijave: const [],
         sada: sada,
