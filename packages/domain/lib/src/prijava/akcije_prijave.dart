@@ -1,6 +1,7 @@
 import '../greske.dart';
 import '../korisnik.dart';
 import '../ponuda/ponuda.dart';
+import '../ponuda/semestar.dart';
 import '../pravila/mesta.dart';
 import '../pravila/uslovi_ponude.dart';
 import '../rezultat.dart';
@@ -78,25 +79,44 @@ Rezultat<Prijava> odbijMesto(Prijava prijava, {required Korisnik ko, required Da
 Rezultat<List<Prijava>> potvrdiMesto(
   Prijava prijava, {
   required Korisnik ko,
+  required Ponuda ponuda,
+  required List<Ponuda> ponude,
   required List<Prijava> svePrijave,
   required DateTime sada,
 }) {
-  if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
-
+  if (!PravaPristupa.jeVlasnik(ko, prijava) || prijava.idPonude != ponuda.id) {
+    return const Neuspeh(NemaPravo());
+  }
   final potvrdjena = _prelaz(prijava, Potvrdjena(kada: sada));
-
   if (potvrdjena case Neuspeh(:final greska)) return Neuspeh(greska);
 
-  final povuceno = Povucena(kada: sada);
+  final semestar = ponuda.semestar;
+  bool istiSemestar(Prijava druga) =>
+      druga.idStudenta == prijava.idStudenta &&
+      druga.id != prijava.id &&
+      _jeIstiSemestar(_semestarPrijave(druga, ponude), semestar);
 
+  if (svePrijave.any((druga) => istiSemestar(druga) && druga.stanje is Potvrdjena)) {
+    return const Neuspeh(VecPotvrdjenoMesto());
+  }
+
+  final povuceno = Povucena(kada: sada);
   final ostale = [
     for (final druga in svePrijave)
-      if (druga.idStudenta == prijava.idStudenta && druga.id != prijava.id && dozvoljenPrelaz(druga.stanje, povuceno))
-        druga.copyWith(stanje: povuceno),
+      if (istiSemestar(druga) && dozvoljenPrelaz(druga.stanje, povuceno)) druga.copyWith(stanje: povuceno),
   ];
-
   return Uspeh([potvrdjena.vrednostIliNull!, ...ostale]);
 }
+
+Semestar? _semestarPrijave(Prijava prijava, List<Ponuda> ponude) {
+  for (final p in ponude) {
+    if (p.id == prijava.idPonude) return p.semestar;
+  }
+  return null;
+}
+
+bool _jeIstiSemestar(Semestar? a, Semestar b) =>
+    a != null && a.vrsta == b.vrsta && a.akademskaGodina == b.akademskaGodina;
 
 Rezultat<Prijava> prihvatiPrijavu(
   Prijava prijava, {

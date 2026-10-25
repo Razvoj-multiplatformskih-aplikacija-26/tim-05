@@ -39,12 +39,14 @@ Ponuda ponuda({
   Jezik jezik = Jezik.engleski,
   NivoJezika nivo = NivoJezika.b2,
   DateTime? rok,
+  Semestar semestar = const Semestar(vrsta: VrstaSemestra.zimski, akademskaGodina: '2027/28'),
 }) {
+
   return Ponuda(
     id: IdPonude(id),
     idUniverziteta: const IdUniverziteta('u-polimi'),
     oblast: 'Racunarstvo',
-    semestar: const Semestar(vrsta: VrstaSemestra.zimski, akademskaGodina: '2027/28'),
+    semestar: semestar,
     brojMesta: brojMesta,
     rok: rok ?? DateTime(2026, 12, 15, 23, 59),
     minimalniProsek: minimalniProsek,

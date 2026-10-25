@@ -21,5 +21,6 @@ extension PorukaGreske on GreskaDomena {
     NijePronadjeno() => 'Traženi podatak nije pronađen.',
     NedozvoljenPrelaz() => 'Ova promena nije moguća u trenutnom stanju prijave.',
     IzmenaNijeMoguca() => 'Prijava se više ne može menjati jer je koordinator već odlučio.',
+    VecPotvrdjenoMesto() => 'Već imate potvrđeno mesto za ovaj semestar.',
   };
 }

@@ -129,3 +129,7 @@ final class NedozvoljenPrelaz extends GreskaDomena {
 final class IzmenaNijeMoguca extends GreskaDomena {
   const IzmenaNijeMoguca();
 }
+
+final class VecPotvrdjenoMesto extends GreskaDomena {
+  const VecPotvrdjenoMesto();
+}

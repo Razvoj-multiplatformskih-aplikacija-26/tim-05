@@ -68,16 +68,19 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
     _primeni(odbijMesto(prijava, ko: skladiste.korisnik, sada: DateTime.now()), 'Mesto je odbijeno.');
   }
 
-  Future<void> _prihvatiMesto(Prijava prijava, String opis) async {
+Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
+    final semestar = nazivSemestra(ponuda.semestar).toLowerCase();
     final potvrdjeno = await _potvrdi(
       naslov: 'Prihvatiti mesto?',
-      tekst: '$opis. Ako prihvatite ovo mesto, sve vaše ostale aktivne prijave biće povučene.',
+      tekst: '$opis. Ako prihvatite ovo mesto, vaše ostale prijave za $semestar biće povučene.',
       dugme: 'Prihvati mesto',
     );
     if (!potvrdjeno || !mounted) return;
     final rezultat = potvrdiMesto(
       prijava,
       ko: skladiste.korisnik,
+      ponuda: ponuda,
+      ponude: skladiste.ponude,
       svePrijave: skladiste.svePrijave,
       sada: DateTime.now(),
     );
@@ -85,11 +88,16 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
       case Uspeh(:final vrednost):
         setState(() => skladiste.sacuvajSve(vrednost));
         final povuceno = vrednost.length - 1;
-        _poruka(povuceno == 0 ? 'Mesto je potvrđeno.' : 'Mesto je potvrđeno. Povučeno ostalih prijava: $povuceno.');
+        _poruka(
+          povuceno == 0
+              ? 'Mesto je potvrđeno.'
+              : 'Mesto je potvrđeno. Povučeno ostalih prijava za $semestar: $povuceno.',
+        );
       case Neuspeh(:final greska):
         _poruka(greska.poruka);
     }
   }
+
 
   Future<void> _izmeni(Prijava prijava) async {
     await context.push('/profil/prijave/${prijava.id.vrednost}/izmena');
@@ -166,7 +174,8 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
               children: [
                 if (stanje is Prihvacena)
                   _PonudjenoMesto(
-                    onPrihvati: () => _prihvatiMesto(prijava, opis),
+                    semestar: nazivSemestra(ponuda.semestar).toLowerCase(),
+                    onPrihvati: () => _prihvatiMesto(prijava, ponuda, opis),
                     onOdbij: () => _odbijMesto(prijava, opis),
                   ),
                 const _Naslov('Tok prijave'),
@@ -410,8 +419,9 @@ class _Odeljak extends StatelessWidget {
 }
 
 class _PonudjenoMesto extends StatelessWidget {
-  const _PonudjenoMesto({required this.onPrihvati, required this.onOdbij});
+  const _PonudjenoMesto({required this.semestar, required this.onPrihvati, required this.onOdbij});
 
+  final String semestar;
   final VoidCallback onPrihvati;
   final VoidCallback onOdbij;
 
@@ -432,7 +442,7 @@ class _PonudjenoMesto extends StatelessWidget {
           Text('Ponuđeno vam je mesto!', style: tekst.titleLarge?.copyWith(color: Boje.uspehNaslov, fontSize: 18)),
           const SizedBox(height: 4),
           Text(
-            'Koordinator je prihvatio vašu prijavu. Ako prihvatite mesto, vaše ostale aktivne prijave se povlače.',
+            'Koordinator je prihvatio vašu prijavu. Ako prihvatite mesto, povlače se vaše ostale prijave za $semestar.',
             style: tekst.bodyMedium?.copyWith(color: Boje.uspehTekst, fontSize: 13),
           ),
           const SizedBox(height: 12),
