@@ -249,7 +249,7 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
                     if (mozeIzmenu)
                       Expanded(
                         child: FilledButton(
-                          onPressed: () => _izmeni,
+                          onPressed: _izmeni,
                           child: Text(stanje is UPripremi ? 'Izmeni i pošalji' : 'Izmeni'),
                         ),
                       ),
