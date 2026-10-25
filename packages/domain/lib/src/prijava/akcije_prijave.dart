@@ -61,6 +61,12 @@ Rezultat<Prijava> povuciPrijavu(Prijava prijava, {required Korisnik ko, required
   return _prelaz(prijava, Povucena(kada: sada));
 }
 
+Rezultat<Prijava> obrisiPrijavu(Prijava prijava, {required Korisnik ko}) {
+  if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
+  if (!prijava.stanje.mozeSeObrisati) return const Neuspeh(BrisanjeNijeMoguce());
+  return Uspeh(prijava);
+}
+
 Rezultat<Prijava> odbijMesto(Prijava prijava, {required Korisnik ko, required DateTime sada}) {
   if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
 

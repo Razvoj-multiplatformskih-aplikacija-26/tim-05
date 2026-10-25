@@ -22,5 +22,8 @@ extension PorukaGreske on GreskaDomena {
     NedozvoljenPrelaz() => 'Ova promena nije moguća u trenutnom stanju prijave.',
     IzmenaNijeMoguca() => 'Prijava se više ne može menjati jer je koordinator već odlučio.',
     VecPotvrdjenoMesto() => 'Već imate potvrđeno mesto za ovaj semestar.',
+    BrisanjeNijeMoguce() => 'Može se obrisati samo odbijena ili povučena prijava.',
+    ProsekNijeBroj() => 'Unesite prosek kao broj, na primer 8,74.',
+    ProsekVanOpsega() => 'Prosek mora biti između ${formatProsek(Prosek.najmanje)} i ${formatProsek(Prosek.najvise)}.',
   };
 }

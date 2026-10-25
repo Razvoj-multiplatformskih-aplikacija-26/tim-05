@@ -178,4 +178,20 @@ group('Potvrda mesta (samo jedno mesto po semestru, ostale za taj semestar se po
     });
   });
 
+    group('Brisanje (README: samo odbijena ili povučena)', () {
+    test('student briše svoju povučenu prijavu', () {
+      expect(obrisiPrijavu(prijava(stanje: Povucena(kada: sada)), ko: andrej).jeUspeh, isTrue);
+    });
+
+    test('prijava u pripremi ne može da se obriše', () {
+      final rezultat = obrisiPrijavu(prijava(), ko: andrej);
+      expect(rezultat.greskaIliNull, isA<BrisanjeNijeMoguce>());
+    });
+
+    test('student ne može da obriše tuđu prijavu', () {
+      final rezultat = obrisiPrijavu(prijava(idStudenta: 's-2', stanje: Povucena(kada: sada)), ko: andrej);
+      expect(rezultat.greskaIliNull, isA<NemaPravo>());
+    });
+  });
+
 }
