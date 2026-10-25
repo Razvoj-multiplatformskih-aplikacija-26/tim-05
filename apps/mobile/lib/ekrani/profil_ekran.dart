@@ -89,7 +89,14 @@ class _ProfilEkranState extends State<ProfilEkran> {
           else
             _lista(
               prazno: 'Nemate sačuvanih ponuda. Sačuvajte ponudu dugmetom na njenom ekranu.',
-              kartice: [for (final ponuda in sacuvane) _KarticaSacuvane(key: ValueKey(ponuda.id), ponuda: ponuda)],
+              kartice: [
+                for (final ponuda in sacuvane)
+                  _KarticaSacuvane(
+                    key: ValueKey(ponuda.id),
+                    ponuda: ponuda,
+                    naDodir: () => _otvori('/profil/sacuvane/${ponuda.id.vrednost}'),
+                  ),
+              ],
             ),
         ],
       ),
@@ -414,9 +421,10 @@ class _KarticaPrijave extends StatelessWidget {
 }
 
 class _KarticaSacuvane extends StatelessWidget {
-  const _KarticaSacuvane({super.key, required this.ponuda});
+  const _KarticaSacuvane({super.key, required this.ponuda, required this.naDodir});
 
   final Ponuda ponuda;
+  final VoidCallback naDodir;
 
   @override
   Widget build(BuildContext context) {
@@ -427,7 +435,7 @@ class _KarticaSacuvane extends StatelessWidget {
 
     return Card(
       child: InkWell(
-        onTap: () => context.go('/ponude/${ponuda.id.vrednost}'),
+        onTap: naDodir,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(

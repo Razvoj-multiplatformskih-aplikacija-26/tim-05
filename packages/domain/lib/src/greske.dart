@@ -133,3 +133,14 @@ final class IzmenaNijeMoguca extends GreskaDomena {
 final class VecPotvrdjenoMesto extends GreskaDomena {
   const VecPotvrdjenoMesto();
 }
+final class BrisanjeNijeMoguce extends GreskaDomena {
+  const BrisanjeNijeMoguce();
+}
+
+final class ProsekNijeBroj extends GreskaDomena {
+  const ProsekNijeBroj();
+}
+
+final class ProsekVanOpsega extends GreskaDomena {
+  const ProsekVanOpsega();
+}

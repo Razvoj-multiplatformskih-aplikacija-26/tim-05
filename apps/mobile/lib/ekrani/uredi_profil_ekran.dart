@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../podaci/lazni_podaci.dart';
 import '../tekst/format.dart';
+import '../tekst/poruke_gresaka.dart';
 import '../tema/tema.dart';
 import '../widgeti/zaglavlje.dart';
 
@@ -24,6 +25,10 @@ class _UrediProfilEkranState extends State<UrediProfilEkran> {
   late final _indeks = TextEditingController(text: _pocetni.brojIndeksa);
   late int _godina = _pocetni.godinaStudija;
 
+  final _kljucForme = GlobalKey<FormState>();
+  late final _prosek = TextEditingController(text: formatProsek(_pocetni.prosek));
+  late final Map<Jezik, NivoJezika> _jezici = Map.of(_pocetni.znanjeJezika);
+
   @override
   void dispose() {
     _ime.dispose();
@@ -32,10 +37,12 @@ class _UrediProfilEkranState extends State<UrediProfilEkran> {
     _fakultet.dispose();
     _smer.dispose();
     _indeks.dispose();
+    _prosek.dispose();
     super.dispose();
   }
 
   void _sacuvaj() {
+    if (!_kljucForme.currentState!.validate()) return;
     skladiste.student = Student(
       id: _pocetni.id,
       ime: _ime.text.trim(),
@@ -45,122 +52,177 @@ class _UrediProfilEkranState extends State<UrediProfilEkran> {
       fakultet: _fakultet.text.trim(),
       smer: _smer.text.trim(),
       godinaStudija: _godina,
-      prosek: _pocetni.prosek,
-      znanjeJezika: _pocetni.znanjeJezika,
+      prosek: Prosek.proveri(_prosek.text).vrednostIliNull!,
+      znanjeJezika: Map.of(_jezici),
     );
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profil je sačuvan.')));
     context.pop();
+  }
+
+  Future<void> _dodajJezik() async {
+    final preostali = [
+      for (final j in Jezik.values)
+        if (!_jezici.containsKey(j)) j,
+    ];
+    final izbor = await showModalBottomSheet<Jezik>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final jezik in preostali)
+              ListTile(title: Text(velikoPrvo(nazivJezika(jezik))), onTap: () => Navigator.pop(context, jezik)),
+          ],
+        ),
+      ),
+    );
+    if (izbor != null && mounted) setState(() => _jezici[izbor] = NivoJezika.values.first);
   }
 
   @override
   Widget build(BuildContext context) {
     final tekst = Theme.of(context).textTheme;
     final inicijali = '${_pocetni.ime.characters.first}${_pocetni.prezime.characters.first}';
-    final jezik = _pocetni.znanjeJezika.entries.firstOrNull;
 
     return Scaffold(
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
-        children: [
-          BordoZaglavlje(
-            razmakDole: 10,
-            dubinaPreklopa: 38,
-            preklop: Center(
-              child: Container(
-                width: 84,
-                height: 84,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Boje.bela,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Boje.pozadina, width: 4),
-                ),
-                child: Text(
-                  inicijali,
-                  style: tekst.headlineMedium?.copyWith(color: Boje.bordo, fontSize: 30, fontWeight: FontWeight.w700),
+      body: Form(
+        key: _kljucForme,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            BordoZaglavlje(
+              razmakDole: 10,
+              dubinaPreklopa: 38,
+              preklop: Center(
+                child: Container(
+                  width: 84,
+                  height: 84,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Boje.bela,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Boje.pozadina, width: 4),
+                  ),
+                  child: Text(
+                    inicijali,
+                    style: tekst.headlineMedium?.copyWith(color: Boje.bordo, fontSize: 30, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
-            ),
-            child: Row(
-              children: [
-                DugmeZaglavlja(ikona: Icons.arrow_back, opis: 'Nazad', onPressed: () => context.pop()),
-                const SizedBox(width: 12),
-                Semantics(
-                  header: true,
-                  child: Text('Uredi profil', style: tekst.headlineSmall?.copyWith(color: Boje.bela, fontSize: 20)),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _Naslov('Lični podaci'),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _Polje(kontroler: _ime, naziv: 'Ime'),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _Polje(kontroler: _prezime, naziv: 'Prezime'),
-                    ),
-                  ],
-                ),
-                _Polje(kontroler: _email, naziv: 'E-pošta', tastatura: TextInputType.emailAddress),
-                const _Naslov('Studije'),
-                _Polje(kontroler: _fakultet, naziv: 'Fakultet'),
-                _Polje(kontroler: _smer, naziv: 'Smer'),
-                _Polje(kontroler: _indeks, naziv: 'Broj indeksa'),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 2, 4, 6),
-                  child: Text(
-                    'Godina studija',
-                    style: tekst.labelMedium?.copyWith(color: Boje.sporedniTekst, fontWeight: FontWeight.w600),
+              child: Row(
+                children: [
+                  DugmeZaglavlja(ikona: Icons.arrow_back, opis: 'Nazad', onPressed: () => context.pop()),
+                  const SizedBox(width: 12),
+                  Semantics(
+                    header: true,
+                    child: Text('Uredi profil', style: tekst.headlineSmall?.copyWith(color: Boje.bela, fontSize: 20)),
                   ),
-                ),
-                Row(
-                  children: [
-                    for (final godina in [1, 2, 3, 4]) ...[
-                      if (godina > 1) const SizedBox(width: 8),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _Naslov('Lični podaci'),
+                  Row(
+                    children: [
                       Expanded(
-                        child: _Godina(
-                          godina: godina,
-                          izabrana: _godina == godina,
-                          onTap: () => setState(() => _godina = godina),
-                        ),
+                        child: _Polje(kontroler: _ime, naziv: 'Ime'),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _Polje(kontroler: _prezime, naziv: 'Prezime'),
                       ),
                     ],
-                  ],
-                ),
-                const _Naslov('Uslovi za prijave'),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _Prikaz(naziv: 'Prosek', vrednost: formatProsek(_pocetni.prosek)),
+                  ),
+                  _Polje(kontroler: _email, naziv: 'E-pošta', tastatura: TextInputType.emailAddress),
+                  const _Naslov('Studije'),
+                  _Polje(kontroler: _fakultet, naziv: 'Fakultet'),
+                  _Polje(kontroler: _smer, naziv: 'Smer'),
+                  _Polje(kontroler: _indeks, naziv: 'Broj indeksa'),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 2, 4, 6),
+                    child: Text(
+                      'Godina studija',
+                      style: tekst.labelMedium?.copyWith(color: Boje.sporedniTekst, fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _Prikaz(
-                        naziv: jezik == null ? 'Jezik' : '${velikoPrvo(nazivJezika(jezik.key))} jezik',
-                        vrednost: jezik == null ? '—' : jezik.value.oznaka,
+                  ),
+                  Row(
+                    children: [
+                      for (final godina in [1, 2, 3, 4]) ...[
+                        if (godina > 1) const SizedBox(width: 8),
+                        Expanded(
+                          child: _Godina(
+                            godina: godina,
+                            izabrana: _godina == godina,
+                            onTap: () => setState(() => _godina = godina),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const _Naslov('Uslovi za prijave'),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: TextFormField(
+                      controller: _prosek,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(labelText: 'Prosek', hintText: 'npr. 8,74'),
+                      validator: (unos) => Prosek.proveri(unos ?? '').greskaIliNull?.poruka,
+                    ),
+                  ),
+                  for (final jezik in _jezici.keys.toList())
+                    Padding(
+                      key: ValueKey(jezik),
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<NivoJezika>(
+                              initialValue: _jezici[jezik],
+                              decoration: InputDecoration(labelText: '${velikoPrvo(nazivJezika(jezik))} jezik'),
+                              items: [
+                                for (final nivo in NivoJezika.values)
+                                  DropdownMenuItem(value: nivo, child: Text(nivo.oznaka)),
+                              ],
+                              onChanged: (nivo) {
+                                if (nivo != null) setState(() => _jezici[jezik] = nivo);
+                              },
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Ukloni jezik',
+                            onPressed: () => setState(() => _jezici.remove(jezik)),
+                            icon: const Icon(Icons.close, color: Boje.sporedniTekst),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
-                  child: Text(
-                    'Prosek i nivo jezika koriste se za proveru uslova ponuda i ne menjaju se ovde.',
-                    style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12),
+                  if (_jezici.length < Jezik.values.length)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _dodajJezik,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Dodaj jezik'),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+                    child: Text(
+                      'Prosek i nivo jezika koriste se za proveru uslova ponuda.',
+                      style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: DecoratedBox(
         decoration: const BoxDecoration(
@@ -204,28 +266,6 @@ class _Polje extends StatelessWidget {
         keyboardType: tastatura,
         textCapitalization: tastatura == TextInputType.text ? TextCapitalization.words : TextCapitalization.none,
         decoration: InputDecoration(labelText: naziv),
-      ),
-    );
-  }
-}
-
-class _Prikaz extends StatelessWidget {
-  const _Prikaz({required this.naziv, required this.vrednost});
-
-  final String naziv;
-  final String vrednost;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextFormField(
-        initialValue: vrednost,
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: naziv,
-          suffixIcon: const Icon(Icons.lock_outline, size: 18, color: Boje.sporedniTekst),
-        ),
       ),
     );
   }

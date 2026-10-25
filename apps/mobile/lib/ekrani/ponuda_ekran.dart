@@ -21,8 +21,9 @@ class PonudaEkran extends StatefulWidget {
 }
 
 class _PonudaEkranState extends State<PonudaEkran> {
-  Future<void> _prijaviSe(Ponuda ponuda) async {
-    await context.push('/ponude/${ponuda.id.vrednost}/prijava');
+  Future<void> _otvori(String deo) async {
+    final ovde = GoRouterState.of(context).matchedLocation;
+    await context.push('$ovde/$deo');
     if (mounted) setState(() {});
   }
 
@@ -40,6 +41,7 @@ class _PonudaEkranState extends State<PonudaEkran> {
       svePrijave: skladiste.svePrijave,
       sada: sada,
     );
+    final slobodno = preostalaMesta(ponuda, skladiste.svePrijave);
     final sacuvana = skladiste.jeSacuvana(ponuda.id);
     final tekst = Theme.of(context).textTheme;
     final belo = Boje.bela.withValues(alpha: 0.9);
@@ -54,7 +56,7 @@ class _PonudaEkranState extends State<PonudaEkran> {
             preklop: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _KljucniPodaci(
-                mesta: '${preostalaMesta(ponuda, skladiste.svePrijave)} / ${ponuda.brojMesta}',
+                mesta: '$slobodno / ${ponuda.brojMesta}',
                 semestar: nazivSemestra(ponuda.semestar).split(' ').first,
                 rok: formatKratakDatum(ponuda.rok),
               ),
@@ -165,6 +167,23 @@ class _PonudaEkranState extends State<PonudaEkran> {
                     ),
                   ),
                 ],
+                if (postojeca == null && uslovi.jeUspeh && slobodno == 0) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Boje.napomenaPozadina,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Boje.napomenaIvica),
+                    ),
+                    child: Text(
+                      'Sva mesta su trenutno popunjena. Prijavu i dalje možete da pošaljete: '
+                      'koordinator može da je stavi na listu čekanja, a mesto se oslobađa ako neko odustane.',
+                      style: tekst.bodyMedium?.copyWith(color: Boje.naZutoj),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -174,12 +193,12 @@ class _PonudaEkranState extends State<PonudaEkran> {
           ? _DugmeSaNatpisom(
               natpis: 'Moja prijava',
               ikona: Icons.description_outlined,
-              onPressed: () => context.go('/profil/prijave/${postojeca.id.vrednost}'),
+              onPressed: () => _otvori('moja/${postojeca.id.vrednost}'),
             )
           : _DugmeSaNatpisom(
               natpis: uslovi.jeUspeh ? 'Prijavi se' : 'Uslovi nisu ispunjeni',
               ikona: Icons.add,
-              onPressed: uslovi.jeUspeh ? () => _prijaviSe(ponuda) : null,
+              onPressed: uslovi.jeUspeh ? () => _otvori('prijava') : null,
             ),
     );
   }

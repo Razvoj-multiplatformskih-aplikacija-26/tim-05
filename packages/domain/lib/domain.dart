@@ -6,6 +6,7 @@ export 'src/ponuda/ponuda.dart';
 export 'src/ponuda/semestar.dart';
 export 'src/pravila/mesta.dart';
 export 'src/pravila/uslovi_ponude.dart';
+export 'src/prosek.dart';
 export 'src/prijava/akcije_prijave.dart';
 export 'src/prijava/motivaciono_pismo.dart';
 export 'src/prijava/prava_pristupa.dart';

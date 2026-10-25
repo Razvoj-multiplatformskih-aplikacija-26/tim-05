@@ -58,6 +58,23 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
     _primeni(povuciPrijavu(prijava, ko: skladiste.korisnik, sada: DateTime.now()), 'Prijava je povučena.');
   }
 
+  Future<void> _obrisi(Prijava prijava, String opis) async {
+    final potvrdjeno = await _potvrdi(
+      naslov: 'Obrisati prijavu?',
+      tekst: '$opis. Da li ste sigurni da želite da obrišete ovu prijavu? Obrisana prijava se ne može vratiti.',
+      dugme: 'Obriši',
+    );
+    if (!potvrdjeno || !mounted) return;
+    switch (obrisiPrijavu(prijava, ko: skladiste.korisnik)) {
+      case Uspeh():
+        skladiste.obrisi(prijava.id);
+        _poruka('Prijava je obrisana.');
+        context.pop();
+      case Neuspeh(:final greska):
+        _poruka(greska.poruka);
+    }
+  }
+
   Future<void> _odbijMesto(Prijava prijava, String opis) async {
     final potvrdjeno = await _potvrdi(
       naslov: 'Odbiti ponuđeno mesto?',
@@ -68,7 +85,7 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
     _primeni(odbijMesto(prijava, ko: skladiste.korisnik, sada: DateTime.now()), 'Mesto je odbijeno.');
   }
 
-Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
+  Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
     final semestar = nazivSemestra(ponuda.semestar).toLowerCase();
     final potvrdjeno = await _potvrdi(
       naslov: 'Prihvatiti mesto?',
@@ -98,9 +115,9 @@ Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
     }
   }
 
-
-  Future<void> _izmeni(Prijava prijava) async {
-    await context.push('/profil/prijave/${prijava.id.vrednost}/izmena');
+  Future<void> _izmeni() async {
+    final ovde = GoRouterState.of(context).matchedLocation;
+    await context.push('$ovde/izmena');
     if (mounted) setState(() {});
   }
 
@@ -135,6 +152,13 @@ Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
                     DugmeZaglavlja(ikona: Icons.arrow_back, opis: 'Nazad', onPressed: () => context.pop()),
                     const SizedBox(width: 12),
                     Text('Moja prijava', style: tekst.headlineSmall?.copyWith(color: Boje.bela, fontSize: 20)),
+                    const Spacer(),
+                    if (stanje.mozeSeObrisati)
+                      DugmeZaglavlja(
+                        ikona: Icons.delete_outline,
+                        opis: 'Obriši prijavu',
+                        onPressed: () => _obrisi(prijava, opis),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -225,7 +249,7 @@ Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
                     if (mozeIzmenu)
                       Expanded(
                         child: FilledButton(
-                          onPressed: () => _izmeni(prijava),
+                          onPressed: _izmeni,
                           child: Text(stanje is UPripremi ? 'Izmeni i pošalji' : 'Izmeni'),
                         ),
                       ),

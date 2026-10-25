@@ -15,6 +15,11 @@ sealed class StanjePrijave {
     NaListiCekanja() || Prihvacena() || Odbijena() || Potvrdjena() || Povucena() => false,
   };
 
+  bool get mozeSeObrisati => switch (this) {
+    Odbijena() || Povucena() => true,
+    UPripremi() || Poslata() || NaListiCekanja() || Prihvacena() || Potvrdjena() => false,
+  };
+
   bool get jeKonacno => switch (this) {
     Odbijena() || Potvrdjena() || Povucena() => true,
     UPripremi() || Poslata() || NaListiCekanja() || Prihvacena() => false,
