@@ -65,6 +65,8 @@ class LaznoSkladiste {
     }
   }
 
+  void obrisi(IdPrijave id) => svePrijave.removeWhere((p) => p.id == id);
+
   void promeniSacuvanu(IdPonude id) {
     if (sacuvane.contains(id)) {
       sacuvane.remove(id);
