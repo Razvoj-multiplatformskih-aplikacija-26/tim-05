@@ -68,7 +68,7 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
     _primeni(odbijMesto(prijava, ko: skladiste.korisnik, sada: DateTime.now()), 'Mesto je odbijeno.');
   }
 
-Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
+  Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
     final semestar = nazivSemestra(ponuda.semestar).toLowerCase();
     final potvrdjeno = await _potvrdi(
       naslov: 'Prihvatiti mesto?',
@@ -97,7 +97,6 @@ Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
         _poruka(greska.poruka);
     }
   }
-
 
   Future<void> _izmeni(Prijava prijava) async {
     await context.push('/profil/prijave/${prijava.id.vrednost}/izmena');

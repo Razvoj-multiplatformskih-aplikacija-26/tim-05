@@ -82,13 +82,8 @@ class _FormularEkranState extends State<FormularEkran> {
     final prijava = _prijavaIzForme();
     if (prijava == null) return;
     skladiste.sacuvaj(prijava);
-    if (_postojeca == null) {
-      _poruka('Prijava je sačuvana u pripremi.');
-      context.go('/profil');
-    } else {
-      _poruka('Izmene su sačuvane.');
-      context.pop();
-    }
+    _poruka(_postojeca == null ? 'Prijava je sačuvana u pripremi.' : 'Izmene su sačuvane.');
+    context.pop();
   }
 
   void _posalji(Ponuda ponuda) {
@@ -106,7 +101,7 @@ class _FormularEkranState extends State<FormularEkran> {
       case Uspeh(:final vrednost):
         skladiste.sacuvaj(vrednost);
         _poruka('Prijava je poslata. Čeka odluku koordinatora.');
-        context.go('/profil');
+        context.pop();
       case Neuspeh(:final greska):
         _poruka(greska.poruka);
     }
