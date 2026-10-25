@@ -14,7 +14,7 @@ Sistem pokriva samo prijavu na razmenu, a ne ceo Erasmus proces.
 ## Zahtevi za temu
 
 1. **Uloge.** Sistem koriste studenti i koordinatori partnerskih univerziteta. Student upravlja samo svojim prijavama, a koordinator objavljuje ponude svog univerziteta i odlučuje samo o prijavama na njih.
-2. **Stanja.** Prijava je prvo u pripremi, dok student popunjava formular, a zatim je poslata. Koordinator je prihvata, odbija ili stavlja na listu čekanja, a student prihvaćeno mesto potvrđuje ili prijavu povlači. Student može da obriše prijavu u pripremi i odbijenu prijavu.
+2. **Stanja.** Prijava je prvo u pripremi, dok student popunjava formular, a zatim je poslata. Koordinator je prihvata, odbija ili stavlja na listu čekanja, a student prihvaćeno mesto potvrđuje ili prijavu povlači. Student može da obriše povučenu ili odbijenu prijavu.
 3. **Pravila.** Prijava se šalje pre roka, uz traženi prosek i nivo jezika, a student može imati najviše tri aktivne prijave. Motivaciono pismo je obavezno i ima najviše 1500 znakova. Prosek je između 6,00 i 10,00. Broj prihvaćenih studenata ne sme preći broj mesta u ponudi, a student može potvrditi samo jedno mesto po semestru, pa se tada povlače njegove ostale prijave za isti semestar. To zavisi od prijava drugih studenata, pa konačno odlučuje server.
 4. **Rad bez mreže.** Student i bez signala vidi svoje poslate prijave i njihova stanja, može da popunjava formular za prijavu i da povuče poslatu prijavu; izmene se šalju kada se veza vrati.
 5. **Posao za osoblje.** Koordinator pregleda i upoređuje sve prijave na ponude svog univerziteta i prati popunjenost mesta, što je posao za veći ekran.
