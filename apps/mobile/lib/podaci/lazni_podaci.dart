@@ -2,24 +2,30 @@ import 'package:domain/domain.dart';
 
 import 'lazno_skladiste.dart';
 
+const pocetniKorisnik = Korisnik(id: _andrej, korisnickoIme: 'andrej', uloga: Uloga.student);
+
+const pocetniStudent = Student(
+  id: _andrej,
+  ime: 'Andrej',
+  prezime: 'Aleksić',
+  brojIndeksa: 'RN 76/24',
+  email: 'andrej@raf.rs',
+  fakultet: 'Računarski fakultet, Beograd',
+  smer: 'Računarske nauke',
+  godinaStudija: 4,
+  prosek: 8.74,
+  znanjeJezika: {Jezik.engleski: NivoJezika.b2},
+);
+
+const pocetneSacuvane = {IdPonude('po-2'), IdPonude('po-7'), IdPonude('po-8')};
+
 final skladiste = LaznoSkladiste(
-  korisnik: const Korisnik(id: _andrej, korisnickoIme: 'andrej', uloga: Uloga.student),
-  student: const Student(
-    id: _andrej,
-    ime: 'Andrej',
-    prezime: 'Aleksić',
-    brojIndeksa: 'RN 76/24',
-    email: 'andrej@raf.rs',
-    fakultet: 'Računarski fakultet, Beograd',
-    smer: 'Racunarske nauke',
-    godinaStudija: 4,
-    prosek: 8.74,
-    znanjeJezika: {Jezik.engleski: NivoJezika.b2},
-  ),
-  univerziteti: _univerziteti,
-  ponude: _ponude,
-  svePrijave: _prijave,
-  sacuvane: {const IdPonude('po-2'), const IdPonude('po-7'), const IdPonude('po-8')},
+  korisnik: pocetniKorisnik,
+  student: pocetniStudent,
+  univerziteti: pocetniUniverziteti,
+  ponude: List.of(pocetnePonude),
+  svePrijave: List.of(pocetnePrijave),
+  sacuvane: Set.of(pocetneSacuvane),
 );
 
 final DateTime _danas = () {
@@ -54,7 +60,7 @@ const _semestarProsli = Semestar(vrsta: VrstaSemestra.letnji, akademskaGodina: '
 
 const _engleskiB2 = ZahtevJezika(jezik: Jezik.engleski, nivo: NivoJezika.b2);
 
-const _univerziteti = [
+const pocetniUniverziteti = [
   Univerzitet(id: _polimi, naziv: 'Politecnico di Milano', grad: 'Milano', drzava: 'Italija', oznakaDrzave: 'IT'),
   Univerzitet(id: _unibo, naziv: 'Università di Bologna', grad: 'Bologna', drzava: 'Italija', oznakaDrzave: 'IT'),
   Univerzitet(id: _polito, naziv: 'Politecnico di Torino', grad: 'Torino', drzava: 'Italija', oznakaDrzave: 'IT'),
@@ -71,7 +77,7 @@ const _univerziteti = [
   Univerzitet(id: _uu, naziv: 'Uppsala universitet', grad: 'Upsala', drzava: 'Švedska', oznakaDrzave: 'SE'),
 ];
 
-final _ponude = <Ponuda>[
+final pocetnePonude = <Ponuda>[
   Ponuda(
     id: const IdPonude('po-1'),
     idUniverziteta: _polimi,
@@ -227,7 +233,7 @@ Prijava _prijava(
   );
 }
 
-final _prijave = <Prijava>[
+final pocetnePrijave = <Prijava>[
   _prijava(
     'p-1',
     _andrej,
