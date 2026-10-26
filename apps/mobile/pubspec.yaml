@@ -18,6 +18,9 @@ dependencies:
   go_router: ^18.0.2
   use_cases:
     path: ../../packages/use_cases
+  blocs:
+    path: ../../packages/blocs
+  flutter_bloc: 9.1.1
 
 dev_dependencies:
   flutter_test:
