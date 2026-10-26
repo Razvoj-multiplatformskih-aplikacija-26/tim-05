@@ -46,7 +46,7 @@ void main() {
       expect(Povucena(kada: sada).jeAktivna, isFalse);
     });
 
-        test('menjati se može samo prijava u pripremi i poslata', () {
+    test('menjati se može samo prijava u pripremi i poslata', () {
       expect(const UPripremi().mozeSeMenjati, isTrue);
       expect(Poslata(kada: sada).mozeSeMenjati, isTrue);
       expect(NaListiCekanja(odlucio: koordinatorMilano.id, kada: sada).mozeSeMenjati, isFalse);
@@ -56,7 +56,7 @@ void main() {
       expect(Povucena(kada: sada).mozeSeMenjati, isFalse);
     });
 
-        test('obrisati se može samo odbijena i povučena prijava', () {
+    test('obrisati se može samo odbijena i povučena prijava', () {
       expect(Odbijena(odlucio: koordinatorMilano.id, kada: sada, razlog: 'test').mozeSeObrisati, isTrue);
       expect(Povucena(kada: sada).mozeSeObrisati, isTrue);
       expect(const UPripremi().mozeSeObrisati, isFalse);

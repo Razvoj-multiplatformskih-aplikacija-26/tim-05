@@ -94,7 +94,7 @@ void main() {
     });
   });
 
-group('Potvrda mesta (samo jedno mesto po semestru, ostale za taj semestar se povlace)', () {
+  group('Potvrda mesta (samo jedno mesto po semestru, ostale za taj semestar se povlace)', () {
     const zimski = Semestar(vrsta: VrstaSemestra.zimski, akademskaGodina: '2027/28');
     const letnji = Semestar(vrsta: VrstaSemestra.letnji, akademskaGodina: '2026/27');
     final ponude = [
@@ -104,12 +104,29 @@ group('Potvrda mesta (samo jedno mesto po semestru, ostale za taj semestar se po
       ponuda(id: 'po-5', semestar: letnji),
     ];
     final milano = ponude.first;
-    final prihvacena = prijava(id: 'p-1', idPonude: 'po-1', stanje: Prihvacena(odlucio: koordinatorMilano.id, kada: sada));
+    final prihvacena = prijava(
+      id: 'p-1',
+      idPonude: 'po-1',
+      stanje: Prihvacena(odlucio: koordinatorMilano.id, kada: sada),
+    );
 
     test('povlaci ostale prijave za isti semestar, a ne dira zavrsene i tudje', () {
-      final poslata = prijava(id: 'p-2', idPonude: 'po-2', stanje: Poslata(kada: sada));
-      final odbijena = prijava(id: 'p-3', idPonude: 'po-3', stanje: Odbijena(odlucio: koordinatorMilano.id, kada: sada, razlog: ''));
-      final markova = prijava(id: 'p-4', idStudenta: 's-2', idPonude: 'po-2', stanje: Poslata(kada: sada));
+      final poslata = prijava(
+        id: 'p-2',
+        idPonude: 'po-2',
+        stanje: Poslata(kada: sada),
+      );
+      final odbijena = prijava(
+        id: 'p-3',
+        idPonude: 'po-3',
+        stanje: Odbijena(odlucio: koordinatorMilano.id, kada: sada, razlog: ''),
+      );
+      final markova = prijava(
+        id: 'p-4',
+        idStudenta: 's-2',
+        idPonude: 'po-2',
+        stanje: Poslata(kada: sada),
+      );
 
       final izmenjene = potvrdiMesto(
         prihvacena,
@@ -127,7 +144,11 @@ group('Potvrda mesta (samo jedno mesto po semestru, ostale za taj semestar se po
     });
 
     test('prijava za drugi semestar ostaje', () {
-      final letnja = prijava(id: 'p-5', idPonude: 'po-5', stanje: Poslata(kada: sada));
+      final letnja = prijava(
+        id: 'p-5',
+        idPonude: 'po-5',
+        stanje: Poslata(kada: sada),
+      );
       final izmenjene = potvrdiMesto(
         prihvacena,
         ko: andrej,
@@ -140,7 +161,11 @@ group('Potvrda mesta (samo jedno mesto po semestru, ostale za taj semestar se po
     });
 
     test('drugo mesto u istom semestru ne moze da se potvrdi', () {
-      final vecPotvrdjena = prijava(id: 'p-2', idPonude: 'po-2', stanje: Potvrdjena(kada: sada));
+      final vecPotvrdjena = prijava(
+        id: 'p-2',
+        idPonude: 'po-2',
+        stanje: Potvrdjena(kada: sada),
+      );
       final rezultat = potvrdiMesto(
         prihvacena,
         ko: andrej,
@@ -153,7 +178,11 @@ group('Potvrda mesta (samo jedno mesto po semestru, ostale za taj semestar se po
     });
 
     test('mesto u drugom semestru moze da se potvrdi', () {
-      final letnjaPotvrdjena = prijava(id: 'p-5', idPonude: 'po-5', stanje: Potvrdjena(kada: sada));
+      final letnjaPotvrdjena = prijava(
+        id: 'p-5',
+        idPonude: 'po-5',
+        stanje: Potvrdjena(kada: sada),
+      );
       final rezultat = potvrdiMesto(
         prihvacena,
         ko: andrej,
@@ -178,9 +207,15 @@ group('Potvrda mesta (samo jedno mesto po semestru, ostale za taj semestar se po
     });
   });
 
-    group('Brisanje (README: samo odbijena ili povučena)', () {
+  group('Brisanje (README: samo odbijena ili povučena)', () {
     test('student briše svoju povučenu prijavu', () {
-      expect(obrisiPrijavu(prijava(stanje: Povucena(kada: sada)), ko: andrej).jeUspeh, isTrue);
+      expect(
+        obrisiPrijavu(
+          prijava(stanje: Povucena(kada: sada)),
+          ko: andrej,
+        ).jeUspeh,
+        isTrue,
+      );
     });
 
     test('prijava u pripremi ne može da se obriše', () {
@@ -189,9 +224,14 @@ group('Potvrda mesta (samo jedno mesto po semestru, ostale za taj semestar se po
     });
 
     test('student ne može da obriše tuđu prijavu', () {
-      final rezultat = obrisiPrijavu(prijava(idStudenta: 's-2', stanje: Povucena(kada: sada)), ko: andrej);
+      final rezultat = obrisiPrijavu(
+        prijava(
+          idStudenta: 's-2',
+          stanje: Povucena(kada: sada),
+        ),
+        ko: andrej,
+      );
       expect(rezultat.greskaIliNull, isA<NemaPravo>());
     });
   });
-
 }

@@ -1,0 +1,16 @@
+name: use_cases
+description: Slučajevi korišćenja i portovi preko kojih aplikacije dolaze do podataka.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dependencies:
+  domain:
+    path: ../domain
+  equatable: 3.0.0
+
+dev_dependencies:
+  test: 1.31.1

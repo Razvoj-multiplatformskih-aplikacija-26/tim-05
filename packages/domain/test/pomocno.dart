@@ -41,7 +41,6 @@ Ponuda ponuda({
   DateTime? rok,
   Semestar semestar = const Semestar(vrsta: VrstaSemestra.zimski, akademskaGodina: '2027/28'),
 }) {
-
   return Ponuda(
     id: IdPonude(id),
     idUniverziteta: const IdUniverziteta('u-polimi'),
