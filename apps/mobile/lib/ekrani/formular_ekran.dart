@@ -24,10 +24,25 @@ class FormularEkran extends StatelessWidget {
   final IdPonude? idPonude;
   final IdPrijave? idPrijave;
 
+  void _posleCuvanja(BuildContext context, PonudeStanje stanje) {
+    final formular = context.read<FormularPrijaveBloc>().state;
+    if (stanje is! PonudeUcitane || formular is! FormularSacuvan) return;
+    if (stanje.podaci.prijava(formular.prijava.id) != formular.prijava) return;
+    final poruka = switch ((formular.poslata, idPrijave)) {
+      (true, _) => 'Prijava je poslata. Čeka odluku koordinatora.',
+      (false, null) => 'Prijava je sačuvana u pripremi.',
+      (false, _) => 'Izmene su sačuvane.',
+    };
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(poruka)));
+    context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<PonudeBloc>();
-    return BlocBuilder<PonudeBloc, PonudeStanje>(
+    return BlocConsumer<PonudeBloc, PonudeStanje>(
+      listenWhen: (pre, sad) => sad is PonudeUcitane,
+      listener: _posleCuvanja,
       builder: (context, stanje) {
         switch (stanje) {
           case PonudeUcitavanje():
@@ -99,15 +114,9 @@ class _FormularState extends State<_Formular> {
 
   void _reaguj(BuildContext context, FormularPrijaveStanje stanje) {
     switch (stanje) {
-      case FormularSacuvan(:final poslata):
+      case FormularSacuvan():
         context.read<PonudeBloc>().add(const PonudeOsvezene());
         context.read<ProfilBloc>().add(const ProfilOsvezen());
-        _poruka(switch ((poslata, widget.postojeca)) {
-          (true, _) => 'Prijava je poslata. Čeka odluku koordinatora.',
-          (false, null) => 'Prijava je sačuvana u pripremi.',
-          (false, _) => 'Izmene su sačuvane.',
-        });
-        context.pop();
       case FormularOdbijen(:final greska):
         _poruka(greska.poruka);
       case FormularNeuspeo():
@@ -127,7 +136,7 @@ class _FormularState extends State<_Formular> {
   Widget build(BuildContext context) {
     return BlocConsumer<FormularPrijaveBloc, FormularPrijaveStanje>(
       listener: _reaguj,
-      builder: (context, stanje) => _ekran(context, uToku: stanje is FormularUToku),
+      builder: (context, stanje) => _ekran(context, uToku: stanje is FormularUToku || stanje is FormularSacuvan),
     );
   }
 
@@ -141,144 +150,150 @@ class _FormularState extends State<_Formular> {
     final tekst = Theme.of(context).textTheme;
     final sporedni = tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12);
 
-    return Scaffold(
-      body: Form(
-        key: _kljucForme,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 16),
-          children: [
-            BordoZaglavlje(
-              razmakDole: 18,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+    return PopScope(
+      canPop: !uToku,
+      child: Scaffold(
+        body: Form(
+          key: _kljucForme,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 16),
+            children: [
+              BordoZaglavlje(
+                razmakDole: 18,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        DugmeZaglavlja(
+                          ikona: Icons.close,
+                          opis: 'Zatvori',
+                          onPressed: uToku ? null : () => context.pop(),
+                        ),
+                        const SizedBox(width: 12),
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            postojeca == null ? 'Prijava' : 'Izmena prijave',
+                            style: tekst.headlineSmall?.copyWith(color: Boje.bela),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    _Destinacija(univerzitet: univerzitet, ponuda: ponuda, stanje: stanje),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _Korak(broj: 1, naslov: 'Podaci iz profila'),
+                    Text('Popunjeno automatski.', style: sporedni),
+                    const SizedBox(height: 10),
+                    Container(
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(color: Boje.siviBlok, borderRadius: BorderRadius.circular(16)),
+                      child: Column(
+                        children: [
+                          _RedPodatka(naziv: 'Ime i prezime', vrednost: student.punoIme),
+                          _RedPodatka(naziv: 'Broj indeksa', vrednost: student.brojIndeksa),
+                          _RedPodatka(naziv: 'Fakultet', vrednost: student.fakultet),
+                          _RedPodatka(naziv: 'Smer i godina', vrednost: '${student.smer} · ${student.godinaStudija}.'),
+                          _RedPodatka(naziv: 'Prosek', vrednost: formatProsek(student.prosek)),
+                          for (final jezik in student.znanjeJezika.entries)
+                            _RedPodatka(
+                              naziv: '${velikoPrvo(nazivJezika(jezik.key))} jezik',
+                              vrednost: jezik.value.oznaka,
+                            ),
+                          _RedPodatka(naziv: 'E-pošta', vrednost: student.email, poslednji: true),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.lock_outline, size: 14, color: Boje.sporedniTekst),
+                          const SizedBox(width: 6),
+                          Text('Ovi podaci se menjaju na Profilu.', style: sporedni),
+                        ],
+                      ),
+                    ),
+                    const _Korak(broj: 2, naslov: 'Motivacija'),
+                    Text('Zašto baš ovaj univerzitet i šta očekujete od razmene.', style: sporedni),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      key: FormularEkran.kljucPisma,
+                      controller: _pismo,
+                      enabled: !uToku,
+                      minLines: 5,
+                      maxLines: 10,
+                      maxLength: MotivacionoPismo.najvise,
+                      maxLengthEnforcement: MaxLengthEnforcement.none,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(labelText: 'Motivaciono pismo *', alignLabelWithHint: true),
+                      validator: _proveriPismo,
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _napomena,
+                      enabled: !uToku,
+                      minLines: 2,
+                      maxLines: 4,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Napomena',
+                        hintText: 'Nije obavezna. Na primer, poseban zahtev ili pitanje.',
+                        alignLabelWithHint: true,
+                      ),
+                    ),
+                    if (!_menjaPoslatu) ...[
+                      const _Korak(broj: 3, naslov: 'Provera pre slanja'),
+                      const SizedBox(height: 6),
+                      ProveraPreSlanja(ponuda: ponuda, student: student, uslovi: podaci.uslovi(ponuda)),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: Boje.pozadina,
+            border: Border(top: BorderSide(color: Boje.ivica)),
+          ),
+          child: SafeArea(
+            minimum: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: _menjaPoslatu
+                ? FilledButton(
+                    onPressed: uToku ? null : () => _zatrazi(posalji: false),
+                    child: const Text('Sačuvaj izmene'),
+                  )
+                : Row(
                     children: [
-                      DugmeZaglavlja(ikona: Icons.close, opis: 'Zatvori', onPressed: () => context.pop()),
-                      const SizedBox(width: 12),
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          postojeca == null ? 'Prijava' : 'Izmena prijave',
-                          style: tekst.headlineSmall?.copyWith(color: Boje.bela),
+                      Expanded(
+                        flex: 4,
+                        child: OutlinedButton(
+                          onPressed: uToku ? null : () => _zatrazi(posalji: false),
+                          child: const Text('Sačuvaj'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 5,
+                        child: FilledButton(
+                          onPressed: uToku ? null : () => _zatrazi(posalji: true),
+                          child: const Text('Pošalji prijavu'),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  _Destinacija(univerzitet: univerzitet, ponuda: ponuda, stanje: stanje),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _Korak(broj: 1, naslov: 'Podaci iz profila'),
-                  Text('Popunjeno automatski.', style: sporedni),
-                  const SizedBox(height: 10),
-                  Container(
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(color: Boje.siviBlok, borderRadius: BorderRadius.circular(16)),
-                    child: Column(
-                      children: [
-                        _RedPodatka(naziv: 'Ime i prezime', vrednost: student.punoIme),
-                        _RedPodatka(naziv: 'Broj indeksa', vrednost: student.brojIndeksa),
-                        _RedPodatka(naziv: 'Fakultet', vrednost: student.fakultet),
-                        _RedPodatka(naziv: 'Smer i godina', vrednost: '${student.smer} · ${student.godinaStudija}.'),
-                        _RedPodatka(naziv: 'Prosek', vrednost: formatProsek(student.prosek)),
-                        for (final jezik in student.znanjeJezika.entries)
-                          _RedPodatka(
-                            naziv: '${velikoPrvo(nazivJezika(jezik.key))} jezik',
-                            vrednost: jezik.value.oznaka,
-                          ),
-                        _RedPodatka(naziv: 'E-pošta', vrednost: student.email, poslednji: true),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.lock_outline, size: 14, color: Boje.sporedniTekst),
-                        const SizedBox(width: 6),
-                        Text('Ovi podaci se menjaju na Profilu.', style: sporedni),
-                      ],
-                    ),
-                  ),
-                  const _Korak(broj: 2, naslov: 'Motivacija'),
-                  Text('Zašto baš ovaj univerzitet i šta očekujete od razmene.', style: sporedni),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    key: FormularEkran.kljucPisma,
-                    controller: _pismo,
-                    enabled: !uToku,
-                    minLines: 5,
-                    maxLines: 10,
-                    maxLength: MotivacionoPismo.najvise,
-                    maxLengthEnforcement: MaxLengthEnforcement.none,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(labelText: 'Motivaciono pismo *', alignLabelWithHint: true),
-                    validator: _proveriPismo,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _napomena,
-                    enabled: !uToku,
-                    minLines: 2,
-                    maxLines: 4,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Napomena',
-                      hintText: 'Nije obavezna. Na primer, poseban zahtev ili pitanje.',
-                      alignLabelWithHint: true,
-                    ),
-                  ),
-                  if (!_menjaPoslatu) ...[
-                    const _Korak(broj: 3, naslov: 'Provera pre slanja'),
-                    const SizedBox(height: 6),
-                    ProveraPreSlanja(ponuda: ponuda, student: student, uslovi: podaci.uslovi(ponuda)),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Boje.pozadina,
-          border: Border(top: BorderSide(color: Boje.ivica)),
-        ),
-        child: SafeArea(
-          minimum: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          // Dok zahtev traje, dugmad su isključena (stanje FormularUToku).
-          child: _menjaPoslatu
-              ? FilledButton(
-                  onPressed: uToku ? null : () => _zatrazi(posalji: false),
-                  child: const Text('Sačuvaj izmene'),
-                )
-              : Row(
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: OutlinedButton(
-                        onPressed: uToku ? null : () => _zatrazi(posalji: false),
-                        child: const Text('Sačuvaj'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      flex: 5,
-                      child: FilledButton(
-                        onPressed: uToku ? null : () => _zatrazi(posalji: true),
-                        child: const Text('Pošalji prijavu'),
-                      ),
-                    ),
-                  ],
-                ),
+          ),
         ),
       ),
     );

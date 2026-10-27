@@ -135,193 +135,211 @@ class _FormaState extends State<_Forma> {
     return BlocListener<ProfilBloc, ProfilStanje>(
       listenWhen: _odgovor,
       listener: _reaguj,
-      child: Scaffold(
-        body: Form(
-          key: _kljucForme,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-              BordoZaglavlje(
-                razmakDole: 10,
-                dubinaPreklopa: 38,
-                preklop: Center(
-                  child: Container(
-                    width: 84,
-                    height: 84,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Boje.bela,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Boje.pozadina, width: 4),
-                    ),
-                    child: Text(
-                      inicijali,
-                      style: tekst.headlineMedium?.copyWith(
-                        color: Boje.bordo,
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-                child: Row(
+      child: BlocBuilder<ProfilBloc, ProfilStanje>(
+        buildWhen: (pre, sad) => _cuvaSe(pre) != _cuvaSe(sad),
+        builder: (context, stanje) {
+          final cuva = _cuvaSe(stanje);
+          return PopScope(
+            canPop: !cuva,
+            child: Scaffold(
+              body: Form(
+                key: _kljucForme,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: ListView(
+                  padding: const EdgeInsets.only(bottom: 24),
                   children: [
-                    DugmeZaglavlja(ikona: Icons.arrow_back, opis: 'Nazad', onPressed: () => context.pop()),
-                    const SizedBox(width: 12),
-                    Semantics(
-                      header: true,
-                      child: Text('Uredi profil', style: tekst.headlineSmall?.copyWith(color: Boje.bela, fontSize: 20)),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _Naslov('Lični podaci'),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _Polje(kontroler: _ime, naziv: 'Ime'),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _Polje(kontroler: _prezime, naziv: 'Prezime'),
-                        ),
-                      ],
-                    ),
-                    _Polje(kontroler: _email, naziv: 'E-pošta', tastatura: TextInputType.emailAddress),
-                    const _Naslov('Studije'),
-                    _Polje(kontroler: _fakultet, naziv: 'Fakultet'),
-                    _Polje(kontroler: _smer, naziv: 'Smer'),
-                    _Polje(kontroler: _indeks, naziv: 'Broj indeksa'),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 2, 4, 6),
-                      child: Text(
-                        'Godina studija',
-                        style: tekst.labelMedium?.copyWith(color: Boje.sporedniTekst, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    FormField<int>(
-                      initialValue: _pocetni.godinaStudija,
-                      onSaved: (godina) => _godina = godina!,
-                      builder: (polje) => Row(
-                        children: [
-                          for (final godina in [1, 2, 3, 4]) ...[
-                            if (godina > 1) const SizedBox(width: 8),
-                            Expanded(
-                              child: _Godina(
-                                godina: godina,
-                                izabrana: polje.value == godina,
-                                onTap: () => polje.didChange(godina),
-                              ),
+                    BordoZaglavlje(
+                      razmakDole: 10,
+                      dubinaPreklopa: 38,
+                      preklop: Center(
+                        child: Container(
+                          width: 84,
+                          height: 84,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Boje.bela,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Boje.pozadina, width: 4),
+                          ),
+                          child: Text(
+                            inicijali,
+                            style: tekst.headlineMedium?.copyWith(
+                              color: Boje.bordo,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w700,
                             ),
-                          ],
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          DugmeZaglavlja(
+                            ikona: Icons.arrow_back,
+                            opis: 'Nazad',
+                            onPressed: cuva ? null : () => context.pop(),
+                          ),
+                          const SizedBox(width: 12),
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              'Uredi profil',
+                              style: tekst.headlineSmall?.copyWith(color: Boje.bela, fontSize: 20),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    const _Naslov('Uslovi za prijave'),
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: TextFormField(
-                        controller: _prosek,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(labelText: 'Prosek', hintText: 'npr. 8,74'),
-                        validator: (unos) => Prosek.proveri(unos ?? '').greskaIliNull?.poruka,
-                      ),
-                    ),
-                    FormField<Map<Jezik, NivoJezika>>(
-                      initialValue: Map.of(_pocetni.znanjeJezika),
-                      onSaved: (jezici) => _jezici = jezici!,
-                      builder: (polje) {
-                        final jezici = polje.value!;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            for (final jezik in jezici.keys.toList())
-                              Padding(
-                                key: ValueKey(jezik),
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: DropdownButtonFormField<NivoJezika>(
-                                        initialValue: jezici[jezik],
-                                        decoration: InputDecoration(
-                                          labelText: '${velikoPrvo(nazivJezika(jezik))} jezik',
-                                        ),
-                                        items: [
-                                          for (final nivo in NivoJezika.values)
-                                            DropdownMenuItem(value: nivo, child: Text(nivo.oznaka)),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const _Naslov('Lični podaci'),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _Polje(kontroler: _ime, naziv: 'Ime'),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _Polje(kontroler: _prezime, naziv: 'Prezime'),
+                              ),
+                            ],
+                          ),
+                          _Polje(kontroler: _email, naziv: 'E-pošta', tastatura: TextInputType.emailAddress),
+                          const _Naslov('Studije'),
+                          _Polje(kontroler: _fakultet, naziv: 'Fakultet'),
+                          _Polje(kontroler: _smer, naziv: 'Smer'),
+                          _Polje(kontroler: _indeks, naziv: 'Broj indeksa'),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 2, 4, 6),
+                            child: Text(
+                              'Godina studija',
+                              style: tekst.labelMedium?.copyWith(
+                                color: Boje.sporedniTekst,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          FormField<int>(
+                            initialValue: _pocetni.godinaStudija,
+                            onSaved: (godina) => _godina = godina!,
+                            builder: (polje) => Row(
+                              children: [
+                                for (final godina in [1, 2, 3, 4]) ...[
+                                  if (godina > 1) const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _Godina(
+                                      godina: godina,
+                                      izabrana: polje.value == godina,
+                                      onTap: () => polje.didChange(godina),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const _Naslov('Uslovi za prijave'),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: TextFormField(
+                              controller: _prosek,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(labelText: 'Prosek', hintText: 'npr. 8,74'),
+                              validator: (unos) => Prosek.proveri(unos ?? '').greskaIliNull?.poruka,
+                            ),
+                          ),
+                          FormField<Map<Jezik, NivoJezika>>(
+                            initialValue: Map.of(_pocetni.znanjeJezika),
+                            onSaved: (jezici) => _jezici = jezici!,
+                            builder: (polje) {
+                              final jezici = polje.value!;
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  for (final jezik in jezici.keys.toList())
+                                    Padding(
+                                      key: ValueKey(jezik),
+                                      padding: const EdgeInsets.only(bottom: 10),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: DropdownButtonFormField<NivoJezika>(
+                                              initialValue: jezici[jezik],
+                                              decoration: InputDecoration(
+                                                labelText: '${velikoPrvo(nazivJezika(jezik))} jezik',
+                                              ),
+                                              items: [
+                                                for (final nivo in NivoJezika.values)
+                                                  DropdownMenuItem(value: nivo, child: Text(nivo.oznaka)),
+                                              ],
+                                              onChanged: (nivo) {
+                                                if (nivo != null) polje.didChange({...jezici, jezik: nivo});
+                                              },
+                                            ),
+                                          ),
+                                          IconButton(
+                                            tooltip: 'Ukloni jezik',
+                                            onPressed: () => polje.didChange({...jezici}..remove(jezik)),
+                                            icon: const Icon(Icons.close, color: Boje.sporedniTekst),
+                                          ),
                                         ],
-                                        onChanged: (nivo) {
-                                          if (nivo != null) polje.didChange({...jezici, jezik: nivo});
-                                        },
                                       ),
                                     ),
-                                    IconButton(
-                                      tooltip: 'Ukloni jezik',
-                                      onPressed: () => polje.didChange({...jezici}..remove(jezik)),
-                                      icon: const Icon(Icons.close, color: Boje.sporedniTekst),
+                                  if (jezici.length < Jezik.values.length)
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: TextButton.icon(
+                                        onPressed: () => _dodajJezik(polje),
+                                        icon: const Icon(Icons.add),
+                                        label: const Text('Dodaj jezik'),
+                                      ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            if (jezici.length < Jezik.values.length)
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextButton.icon(
-                                  onPressed: () => _dodajJezik(polje),
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('Dodaj jezik'),
-                                ),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
-                      child: Text(
-                        'Prosek i nivo jezika koriste se za proveru uslova ponuda.',
-                        style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12),
+                                ],
+                              );
+                            },
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+                            child: Text(
+                              'Prosek i nivo jezika koriste se za proveru uslova ponuda.',
+                              style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-        bottomNavigationBar: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: Boje.pozadina,
-            border: Border(top: BorderSide(color: Boje.ivica)),
-          ),
-          child: SafeArea(
-            minimum: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 7,
-                  child: OutlinedButton(onPressed: () => context.pop(), child: const Text('Otkaži')),
+              bottomNavigationBar: DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: Boje.pozadina,
+                  border: Border(top: BorderSide(color: Boje.ivica)),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 10,
-                  child: BlocBuilder<ProfilBloc, ProfilStanje>(
-                    buildWhen: (pre, sad) => _cuvaSe(pre) != _cuvaSe(sad),
-                    builder: (context, stanje) =>
-                        FilledButton(onPressed: _cuvaSe(stanje) ? null : _sacuvaj, child: const Text('Sačuvaj izmene')),
+                child: SafeArea(
+                  minimum: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 7,
+                        child: OutlinedButton(
+                          onPressed: cuva ? null : () => context.pop(),
+                          child: const Text('Otkaži'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 10,
+                        child: FilledButton(onPressed: cuva ? null : _sacuvaj, child: const Text('Sačuvaj izmene')),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

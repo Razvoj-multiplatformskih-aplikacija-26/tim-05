@@ -65,7 +65,6 @@ class MojaPrijavaEkran extends StatelessWidget {
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(poruka)));
     context.read<ProfilBloc>().add(const ObavestenjeProfilaProcitano());
-
     if (uspeh) context.read<PonudeBloc>().add(const PonudeOsvezene());
     if (obavestenje is PrijavaObrisana) context.pop();
   }
@@ -154,164 +153,171 @@ class _MojaPrijava extends StatelessWidget {
       for (final jezik in student.znanjeJezika.entries) '${nazivJezika(jezik.key)} ${jezik.value.oznaka}',
     ];
 
-    return Scaffold(
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
-        children: [
-          BordoZaglavlje(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    DugmeZaglavlja(ikona: Icons.arrow_back, opis: 'Nazad', onPressed: () => context.pop()),
-                    const SizedBox(width: 12),
-                    Text('Moja prijava', style: tekst.headlineSmall?.copyWith(color: Boje.bela, fontSize: 20)),
-                    const Spacer(),
-                    if (stanje.mozeSeObrisati && !uToku)
+    return PopScope(
+      canPop: !uToku,
+      child: Scaffold(
+        body: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            BordoZaglavlje(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
                       DugmeZaglavlja(
-                        ikona: Icons.delete_outline,
-                        opis: 'Obriši prijavu',
-                        onPressed: () => _poslePotvrde(
-                          context,
-                          BrisanjeZatrazeno(prijava.id),
-                          naslov: 'Obrisati prijavu?',
-                          tekst:
-                              '$opis. Da li ste sigurni da želite da obrišete ovu prijavu? '
-                              'Obrisana prijava se ne može vratiti.',
-                          dugme: 'Obriši',
-                        ),
+                        ikona: Icons.arrow_back,
+                        opis: 'Nazad',
+                        onPressed: uToku ? null : () => context.pop(),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    OznakaDrzave(oznaka: univerzitet.oznakaDrzave, naBordo: true),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Semantics(
-                            header: true,
-                            child: Text(
-                              univerzitet.grad,
-                              style: tekst.headlineMedium?.copyWith(color: Boje.bela, fontSize: 24),
-                            ),
-                          ),
-                          Text(
-                            '${univerzitet.naziv} · ${nazivSemestra(ponuda.semestar)}',
-                            style: tekst.bodySmall?.copyWith(color: Boje.bela.withValues(alpha: 0.85), fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                OznakaStanja(stanje: stanje),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (uToku)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 12),
-                    child: LinearProgressIndicator(color: Boje.bordo),
-                  ),
-                if (stanje is Prihvacena)
-                  _PonudjenoMesto(
-                    semestar: nazivSemestra(ponuda.semestar).toLowerCase(),
-                    onPrihvati: uToku
-                        ? null
-                        : () => _poslePotvrde(
+                      const SizedBox(width: 12),
+                      Text('Moja prijava', style: tekst.headlineSmall?.copyWith(color: Boje.bela, fontSize: 20)),
+                      const Spacer(),
+                      if (stanje.mozeSeObrisati && !uToku)
+                        DugmeZaglavlja(
+                          ikona: Icons.delete_outline,
+                          opis: 'Obriši prijavu',
+                          onPressed: () => _poslePotvrde(
                             context,
-                            PotvrdaMestaZatrazena(prijava.id),
-                            naslov: 'Prihvatiti mesto?',
+                            BrisanjeZatrazeno(prijava.id),
+                            naslov: 'Obrisati prijavu?',
                             tekst:
-                                '$opis. Ako prihvatite ovo mesto, vaše ostale prijave za '
-                                '${nazivSemestra(ponuda.semestar).toLowerCase()} biće povučene.',
-                            dugme: 'Prihvati mesto',
+                                '$opis. Da li ste sigurni da želite da obrišete ovu prijavu? '
+                                'Obrisana prijava se ne može vratiti.',
+                            dugme: 'Obriši',
                           ),
-                    onOdbij: uToku
-                        ? null
-                        : () => _poslePotvrde(
-                            context,
-                            OdbijanjeMestaZatrazeno(prijava.id),
-                            naslov: 'Odbiti ponuđeno mesto?',
-                            tekst: '$opis. Prijava će biti povučena i mesto će dobiti drugi student.',
-                            dugme: 'Odbij mesto',
-                          ),
+                        ),
+                    ],
                   ),
-                const _Naslov('Tok prijave'),
-                _TokPrijave(koraci: _koraci(prijava)),
-                const _Naslov('Sadržaj prijave'),
-                _Odeljak(naslov: 'Motivaciono pismo', tekst: prijava.motivacionoPismo.tekst),
-                const SizedBox(height: 8),
-                _Odeljak(naslov: 'Napomena', tekst: prijava.napomena ?? '—'),
-                const SizedBox(height: 8),
-                _Odeljak(
-                  naslov: 'Podaci iz profila',
-                  tekst: [
-                    student.punoIme,
-                    student.brojIndeksa,
-                    'prosek ${formatProsek(student.prosek)}',
-                    ...jezici,
-                  ].join(' · '),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      OznakaDrzave(oznaka: univerzitet.oznakaDrzave, naBordo: true),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                univerzitet.grad,
+                                style: tekst.headlineMedium?.copyWith(color: Boje.bela, fontSize: 24),
+                              ),
+                            ),
+                            Text(
+                              '${univerzitet.naziv} · ${nazivSemestra(ponuda.semestar)}',
+                              style: tekst.bodySmall?.copyWith(color: Boje.bela.withValues(alpha: 0.85), fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  OznakaStanja(stanje: stanje),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: mozeIzmenu || mozePovlacenje
-          ? DecoratedBox(
-              decoration: const BoxDecoration(
-                color: Boje.pozadina,
-                border: Border(top: BorderSide(color: Boje.ivica)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (uToku)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12),
+                      child: LinearProgressIndicator(color: Boje.bordo),
+                    ),
+                  if (stanje is Prihvacena)
+                    _PonudjenoMesto(
+                      semestar: nazivSemestra(ponuda.semestar).toLowerCase(),
+                      onPrihvati: uToku
+                          ? null
+                          : () => _poslePotvrde(
+                              context,
+                              PotvrdaMestaZatrazena(prijava.id),
+                              naslov: 'Prihvatiti mesto?',
+                              tekst:
+                                  '$opis. Ako prihvatite ovo mesto, vaše ostale prijave za '
+                                  '${nazivSemestra(ponuda.semestar).toLowerCase()} biće povučene.',
+                              dugme: 'Prihvati mesto',
+                            ),
+                      onOdbij: uToku
+                          ? null
+                          : () => _poslePotvrde(
+                              context,
+                              OdbijanjeMestaZatrazeno(prijava.id),
+                              naslov: 'Odbiti ponuđeno mesto?',
+                              tekst: '$opis. Prijava će biti povučena i mesto će dobiti drugi student.',
+                              dugme: 'Odbij mesto',
+                            ),
+                    ),
+                  const _Naslov('Tok prijave'),
+                  _TokPrijave(koraci: _koraci(prijava)),
+                  const _Naslov('Sadržaj prijave'),
+                  _Odeljak(naslov: 'Motivaciono pismo', tekst: prijava.motivacionoPismo.tekst),
+                  const SizedBox(height: 8),
+                  _Odeljak(naslov: 'Napomena', tekst: prijava.napomena ?? '—'),
+                  const SizedBox(height: 8),
+                  _Odeljak(
+                    naslov: 'Podaci iz profila',
+                    tekst: [
+                      student.punoIme,
+                      student.brojIndeksa,
+                      'prosek ${formatProsek(student.prosek)}',
+                      ...jezici,
+                    ].join(' · '),
+                  ),
+                ],
               ),
-              child: SafeArea(
-                minimum: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Row(
-                  children: [
-                    if (mozePovlacenje)
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: uToku
-                              ? null
-                              : () => _poslePotvrde(
-                                  context,
-                                  PovlacenjeZatrazeno(prijava.id),
-                                  naslov: 'Povući prijavu?',
-                                  tekst: '$opis. Povučena prijava se ne može vratiti.',
-                                  dugme: 'Povuci',
-                                ),
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: Boje.bela,
-                            foregroundColor: Boje.opasnost,
-                            side: const BorderSide(color: Boje.opasnostIvica, width: 1.5),
-                          ),
-                          child: const Text('Povuci prijavu'),
-                        ),
-                      ),
-                    if (mozePovlacenje && mozeIzmenu) const SizedBox(width: 10),
-                    if (mozeIzmenu)
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: uToku ? null : () => _izmeni(context),
-                          child: Text(stanje is UPripremi ? 'Izmeni i pošalji' : 'Izmeni'),
-                        ),
-                      ),
-                  ],
+            ),
+          ],
+        ),
+        bottomNavigationBar: mozeIzmenu || mozePovlacenje
+            ? DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: Boje.pozadina,
+                  border: Border(top: BorderSide(color: Boje.ivica)),
                 ),
-              ),
-            )
-          : null,
+                child: SafeArea(
+                  minimum: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Row(
+                    children: [
+                      if (mozePovlacenje)
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: uToku
+                                ? null
+                                : () => _poslePotvrde(
+                                    context,
+                                    PovlacenjeZatrazeno(prijava.id),
+                                    naslov: 'Povući prijavu?',
+                                    tekst: '$opis. Povučena prijava se ne može vratiti.',
+                                    dugme: 'Povuci',
+                                  ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Boje.bela,
+                              foregroundColor: Boje.opasnost,
+                              side: const BorderSide(color: Boje.opasnostIvica, width: 1.5),
+                            ),
+                            child: const Text('Povuci prijavu'),
+                          ),
+                        ),
+                      if (mozePovlacenje && mozeIzmenu) const SizedBox(width: 10),
+                      if (mozeIzmenu)
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: uToku ? null : () => _izmeni(context),
+                            child: Text(stanje is UPripremi ? 'Izmeni i pošalji' : 'Izmeni'),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              )
+            : null,
+      ),
     );
   }
 }

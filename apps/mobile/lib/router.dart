@@ -73,7 +73,6 @@ GoRouter napraviRuter() {
               ),
             ],
           ),
-          // Tab 2: Profil i sve što se otvara iz njega
           StatefulShellBranch(
             routes: [
               GoRoute(
