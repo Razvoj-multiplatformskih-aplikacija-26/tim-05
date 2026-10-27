@@ -1,28 +1,52 @@
+import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../podaci/lazni_podaci.dart';
 import '../tekst/format.dart';
 import '../tema/tema.dart';
 import '../widgeti/kartica_ponude.dart';
+import '../widgeti/kontrole_laznih_podataka.dart';
 import '../widgeti/logo.dart';
+import '../widgeti/prikazi_stanja.dart';
 import '../widgeti/zaglavlje.dart';
 
-class PocetnaEkran extends StatefulWidget {
+class PocetnaEkran extends StatelessWidget {
   const PocetnaEkran({super.key});
 
   @override
-  State<PocetnaEkran> createState() => _PocetnaEkranState();
+  Widget build(BuildContext context) {
+    final bloc = context.read<PonudeBloc>();
+    return BlocBuilder<PonudeBloc, PonudeStanje>(
+      builder: (context, stanje) => switch (stanje) {
+        PonudeUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
+        PonudeGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const PonudeZatrazene()))),
+        PonudePrazne() => EkranStanja(
+          child: PrikazPraznog(
+            ikona: Icons.travel_explore,
+            poruka: 'Trenutno nema objavljenih ponuda.',
+            dugme: 'Osveži',
+            onPritisak: () => bloc.add(const PonudeZatrazene()),
+          ),
+        ),
+        final PonudeUcitane ucitane => _Ponude(stanje: ucitane),
+      },
+    );
+  }
 }
 
-class _PocetnaEkranState extends State<PocetnaEkran> {
-  final _pretraga = TextEditingController();
-  String _upit = '';
-  String? _drzava;
-  VrstaSemestra? _semestar;
-  String? _oblast;
-  Jezik? _jezik;
+class _Ponude extends StatefulWidget {
+  const _Ponude({required this.stanje});
+
+  final PonudeUcitane stanje;
+
+  @override
+  State<_Ponude> createState() => _PonudeState();
+}
+
+class _PonudeState extends State<_Ponude> {
+  late final _pretraga = TextEditingController(text: widget.stanje.filteri.upit);
 
   @override
   void dispose() {
@@ -30,24 +54,9 @@ class _PocetnaEkranState extends State<PocetnaEkran> {
     super.dispose();
   }
 
-  List<Ponuda> _filtrirane() {
-    final upit = _upit.trim().toLowerCase();
-    return [
-      for (final ponuda in skladiste.ponude)
-        if (_odgovara(ponuda, upit)) ponuda,
-    ]..sort((a, b) => b.objavljena.compareTo(a.objavljena));
-  }
+  PonudeFilteri get _filteri => widget.stanje.filteri;
 
-  bool _odgovara(Ponuda ponuda, String upit) {
-    final univerzitet = skladiste.univerzitet(ponuda.idUniverziteta);
-    if (_drzava != null && univerzitet.drzava != _drzava) return false;
-    if (_semestar != null && ponuda.semestar.vrsta != _semestar) return false;
-    if (_oblast != null && ponuda.oblast != _oblast) return false;
-    if (_jezik != null && ponuda.zahtevJezika.jezik != _jezik) return false;
-    if (upit.isEmpty) return true;
-    final tekst = '${univerzitet.naziv} ${univerzitet.grad} ${univerzitet.drzava} ${ponuda.oblast}'.toLowerCase();
-    return tekst.contains(upit);
-  }
+  void _promeni(PonudeFilteri filteri) => context.read<PonudeBloc>().add(FilteriPromenjeni(filteri));
 
   Future<T?> _izaberi<T>(String naslov, List<T> opcije, String Function(T) naziv) {
     return showModalBottomSheet<T>(
@@ -74,26 +83,22 @@ class _PocetnaEkranState extends State<PocetnaEkran> {
     required String naslov,
     required List<T> opcije,
     required String Function(T) naziv,
-    required void Function(T?) postavi,
+    required PonudeFilteri Function(T? izbor) postavi,
   }) async {
     if (trenutno != null) {
-      setState(() => postavi(null));
+      _promeni(postavi(null));
       return;
     }
     final izbor = await _izaberi(naslov, opcije, naziv);
-    if (izbor != null && mounted) setState(() => postavi(izbor));
-  }
-
-  Future<void> _otvori(Ponuda ponuda) async {
-    await context.push('/ponude/${ponuda.id.vrednost}');
-    if (mounted) setState(() {});
+    if (izbor != null && mounted) _promeni(postavi(izbor));
   }
 
   @override
   Widget build(BuildContext context) {
     final tekst = Theme.of(context).textTheme;
-    final ponude = _filtrirane();
-    final sada = DateTime.now();
+    final podaci = widget.stanje.podaci;
+    final ponude = widget.stanje.filtrirane;
+    final bloc = context.read<PonudeBloc>();
 
     return Scaffold(
       body: CustomScrollView(
@@ -102,19 +107,27 @@ class _PocetnaEkranState extends State<PocetnaEkran> {
             child: BordoZaglavlje(
               dubinaPreklopa: 26,
               preklop: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _pretragaPolje()),
-              child: _Pozdrav(ime: skladiste.student.ime),
+              child: _Pozdrav(
+                ime: podaci.student.ime,
+                meni: KontroleLaznihPodataka(
+                  naPrazanOdgovor: (baza) => baza.prazneListePonuda = 1,
+                  naPonovnoUcitavanje: () => bloc.add(const PonudeZatrazene()),
+                ),
+              ),
             ),
           ),
-          SliverToBoxAdapter(child: _filteri()),
+          SliverToBoxAdapter(child: _filteriRed()),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 20, 18, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child:Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Semantics(header: true, child: Text('Najnovije ponude', style: tekst.titleLarge)),
+                  Expanded(
+                    child: Semantics(header: true, child: Text('Najnovije ponude', style: tekst.titleLarge)),
+                  ),
+                  const SizedBox(width: 12),
                   Text('Ukupno: ${ponude.length}', style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst)),
                 ],
               ),
@@ -143,10 +156,10 @@ class _PocetnaEkranState extends State<PocetnaEkran> {
                   return KarticaPonude(
                     key: ValueKey(ponuda.id),
                     ponuda: ponuda,
-                    univerzitet: skladiste.univerzitet(ponuda.idUniverziteta),
-                    preostaloMesta: preostalaMesta(ponuda, skladiste.svePrijave),
-                    jeNova: sada.difference(ponuda.objavljena).inDays < 7,
-                    onTap: () => _otvori(ponuda),
+                    univerzitet: podaci.univerzitet(ponuda.idUniverziteta),
+                    preostaloMesta: podaci.slobodnaMesta(ponuda),
+                    jeNova: podaci.jeNova(ponuda),
+                    onTap: () => context.push('/ponude/${ponuda.id.vrednost}'),
                   );
                 },
               ),
@@ -165,7 +178,7 @@ class _PocetnaEkranState extends State<PocetnaEkran> {
       color: Boje.bela,
       child: TextField(
         controller: _pretraga,
-        onChanged: (unos) => setState(() => _upit = unos),
+        onChanged: (unos) => _promeni(_filteri.copyWith(upit: unos)),
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: 'Pretraži univerzitet ili grad',
@@ -173,27 +186,26 @@ class _PocetnaEkranState extends State<PocetnaEkran> {
           border: bezIvice,
           enabledBorder: bezIvice,
           focusedBorder: bezIvice,
-          suffixIcon: _upit.isEmpty
+          suffixIcon: _filteri.upit.isEmpty
               ? null
               : IconButton(
                   tooltip: 'Obriši pretragu',
                   icon: const Icon(Icons.clear),
-                  onPressed: () => setState(() {
+                  onPressed: () {
                     _pretraga.clear();
-                    _upit = '';
-                  }),
+                    _promeni(_filteri.copyWith(upit: ''));
+                  },
                 ),
         ),
       ),
     );
   }
 
-  Widget _filteri() {
-    final drzave = {for (final u in skladiste.univerziteti) u.drzava}.toList()..sort();
-    final oblasti = {for (final p in skladiste.ponude) p.oblast}.toList()..sort();
-    final jezici = {for (final p in skladiste.ponude) p.zahtevJezika.jezik}.toList();
+  Widget _filteriRed() {
+    final stanje = widget.stanje;
     String semestar(VrstaSemestra v) => v == VrstaSemestra.zimski ? 'Zimski' : 'Letnji';
     String jezik(Jezik j) => velikoPrvo(nazivJezika(j));
+    final filteri = _filteri;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -203,52 +215,52 @@ class _PocetnaEkranState extends State<PocetnaEkran> {
           _Filter(
             ikona: Icons.public,
             naziv: 'Država',
-            izabrano: _drzava,
+            izabrano: filteri.drzava,
             onTap: () => _promeniFilter(
-              trenutno: _drzava,
+              trenutno: filteri.drzava,
               naslov: 'Država',
-              opcije: drzave,
+              opcije: stanje.drzave,
               naziv: (d) => d,
-              postavi: (v) => _drzava = v,
+              postavi: (v) => _filteri.copyWith(drzava: () => v),
             ),
           ),
           const SizedBox(width: 8),
           _Filter(
             ikona: Icons.calendar_month_outlined,
             naziv: 'Semestar',
-            izabrano: _semestar == null ? null : semestar(_semestar!),
+            izabrano: filteri.semestar == null ? null : semestar(filteri.semestar!),
             onTap: () => _promeniFilter(
-              trenutno: _semestar,
+              trenutno: filteri.semestar,
               naslov: 'Semestar',
               opcije: VrstaSemestra.values,
               naziv: semestar,
-              postavi: (v) => _semestar = v,
+              postavi: (v) => _filteri.copyWith(semestar: () => v),
             ),
           ),
           const SizedBox(width: 8),
           _Filter(
             ikona: Icons.school_outlined,
             naziv: 'Smer',
-            izabrano: _oblast,
+            izabrano: filteri.oblast,
             onTap: () => _promeniFilter(
-              trenutno: _oblast,
+              trenutno: filteri.oblast,
               naslov: 'Smer',
-              opcije: oblasti,
+              opcije: stanje.oblasti,
               naziv: (o) => o,
-              postavi: (v) => _oblast = v,
+              postavi: (v) => _filteri.copyWith(oblast: () => v),
             ),
           ),
           const SizedBox(width: 8),
           _Filter(
             ikona: Icons.translate,
             naziv: 'Jezik',
-            izabrano: _jezik == null ? null : jezik(_jezik!),
+            izabrano: filteri.jezik == null ? null : jezik(filteri.jezik!),
             onTap: () => _promeniFilter(
-              trenutno: _jezik,
+              trenutno: filteri.jezik,
               naslov: 'Jezik',
-              opcije: jezici,
+              opcije: stanje.jezici,
               naziv: jezik,
-              postavi: (v) => _jezik = v,
+              postavi: (v) => _filteri.copyWith(jezik: () => v),
             ),
           ),
         ],
@@ -258,9 +270,10 @@ class _PocetnaEkranState extends State<PocetnaEkran> {
 }
 
 class _Pozdrav extends StatelessWidget {
-  const _Pozdrav({required this.ime});
+  const _Pozdrav({required this.ime, required this.meni});
 
   final String ime;
+  final Widget meni;
 
   @override
   Widget build(BuildContext context) {
@@ -285,6 +298,8 @@ class _Pozdrav extends StatelessWidget {
               ),
               style: naziv,
             ),
+            const Spacer(),
+            meni,
           ],
         ),
         const SizedBox(height: 16),

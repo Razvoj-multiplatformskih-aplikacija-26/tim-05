@@ -1,28 +1,22 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:use_cases/use_cases.dart';
 
 import '../tekst/format.dart';
 import '../tema/tema.dart';
 
 class ListaUslova extends StatelessWidget {
-  const ListaUslova({
-    super.key,
-    required this.ponuda,
-    required this.student,
-    required this.svePrijave,
-    required this.sada,
-  });
+  const ListaUslova({super.key, required this.ponuda, required this.student, required this.uslovi});
 
   final Ponuda ponuda;
   final Student student;
-  final List<Prijava> svePrijave;
-  final DateTime sada;
+  final ProveraUslova uslovi;
 
   @override
   Widget build(BuildContext context) {
     final nivo = student.nivoZa(ponuda.zahtevJezika.jezik);
-    final aktivno = aktivnePrijave(student.id, svePrijave).length;
-    final rokOtvoren = rokNijeIstekao(ponuda, sada);
+    final aktivno = uslovi.brojAktivnih;
+    final rokOtvoren = uslovi.rok;
 
     return Card(
       child: Column(
@@ -31,7 +25,7 @@ class ListaUslova extends StatelessWidget {
             ikona: Icons.translate,
             naslov: 'Jezik',
             vrednost: '${opisZahtevaJezika(ponuda.zahtevJezika)} ili više',
-            ispunjen: imaJezik(student, ponuda),
+            ispunjen: uslovi.jezik,
             oznaka: nivo == null ? 'Nemate' : 'Imate ${nivo.oznaka}',
           ),
           const Divider(indent: 14, endIndent: 14),
@@ -39,7 +33,7 @@ class ListaUslova extends StatelessWidget {
             ikona: Icons.bar_chart,
             naslov: 'Minimalni prosek',
             vrednost: formatProsek(ponuda.minimalniProsek),
-            ispunjen: imaProsek(student, ponuda),
+            ispunjen: uslovi.prosek,
             oznaka: 'Imate ${formatProsek(student.prosek)}',
           ),
           const Divider(indent: 14, endIndent: 14),
@@ -55,7 +49,7 @@ class ListaUslova extends StatelessWidget {
             ikona: Icons.assignment_outlined,
             naslov: 'Aktivne prijave',
             vrednost: '$aktivno od najviše $najviseAktivnihPrijava',
-            ispunjen: imaMestaZaNovuPrijavu(student, svePrijave),
+            ispunjen: uslovi.mestoZaPrijavu,
             oznaka: '$aktivno/$najviseAktivnihPrijava',
           ),
         ],
@@ -122,26 +116,19 @@ class _Uslov extends StatelessWidget {
 }
 
 class ProveraPreSlanja extends StatelessWidget {
-  const ProveraPreSlanja({
-    super.key,
-    required this.ponuda,
-    required this.student,
-    required this.svePrijave,
-    required this.sada,
-  });
+  const ProveraPreSlanja({super.key, required this.ponuda, required this.student, required this.uslovi});
 
   final Ponuda ponuda;
   final Student student;
-  final List<Prijava> svePrijave;
-  final DateTime sada;
+  final ProveraUslova uslovi;
 
   @override
   Widget build(BuildContext context) {
     final zahtev = ponuda.zahtevJezika;
     final nivo = student.nivoZa(zahtev.jezik);
-    final imaProsekUslov = imaProsek(student, ponuda);
-    final imaJezikUslov = imaJezik(student, ponuda);
-    final aktivno = aktivnePrijave(student.id, svePrijave).length;
+    final imaProsekUslov = uslovi.prosek;
+    final imaJezikUslov = uslovi.jezik;
+    final aktivno = uslovi.brojAktivnih;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -163,10 +150,10 @@ class ProveraPreSlanja extends StatelessWidget {
                 '${velikoPrvo(nazivJezika(zahtev.jezik))} ${nivo?.oznaka ?? '—'} ${imaJezikUslov ? '≥' : '<'} ${zahtev.nivo.oznaka}',
           ),
           _Pravilo(
-            ispunjeno: imaMestaZaNovuPrijavu(student, svePrijave),
+            ispunjeno: uslovi.mestoZaPrijavu,
             tekst: 'Aktivne prijave: $aktivno od najviše $najviseAktivnihPrijava',
           ),
-          _Pravilo(ispunjeno: rokNijeIstekao(ponuda, sada), tekst: 'Rok za prijavu: ${formatDatum(ponuda.rok)}'),
+          _Pravilo(ispunjeno: uslovi.rok, tekst: 'Rok za prijavu: ${formatDatum(ponuda.rok)}'),
         ],
       ),
     );

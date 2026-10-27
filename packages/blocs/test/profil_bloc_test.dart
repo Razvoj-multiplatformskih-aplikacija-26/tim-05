@@ -17,7 +17,6 @@ ProfilBloc napravi(TestBaza baza) => ProfilBloc(
   korisnik: andrej,
 );
 
-
 Future<void> Function(ProfilBloc) ucitajPa(ProfilDogadjaj dogadjaj) => (bloc) async {
   bloc.add(const ProfilZatrazen());
   await Future<void>.delayed(Duration.zero);
@@ -71,7 +70,12 @@ void main() {
   group('akcije', () {
     blocTest<ProfilBloc, ProfilStanje>(
       'povlačenje: prijava je u toku, pa povučena, uz poruku',
-      build: () => napravi(TestBaza(student: student, prijave: [prijava(stanje: Poslata(kada: sat.sada()))])),
+      build: () => napravi(
+        TestBaza(
+          student: student,
+          prijave: [prijava(stanje: Poslata(kada: sat.sada()))],
+        ),
+      ),
       act: ucitajPa(const PovlacenjeZatrazeno(IdPrijave('p-1'))),
       skip: 2,
       expect: () => [
@@ -88,10 +92,19 @@ void main() {
       build: () => napravi(
         TestBaza(
           student: student,
-          ponude: [ponuda(), ponuda(id: 'po-2')],
+          ponude: [
+            ponuda(),
+            ponuda(id: 'po-2'),
+          ],
           prijave: [
-            prijava(stanje: Prihvacena(odlucio: const IdKorisnika('k-1'), kada: sat.sada())),
-            prijava(id: 'p-2', idPonude: 'po-2', stanje: Poslata(kada: sat.sada())),
+            prijava(
+              stanje: Prihvacena(odlucio: const IdKorisnika('k-1'), kada: sat.sada()),
+            ),
+            prijava(
+              id: 'p-2',
+              idPonude: 'po-2',
+              stanje: Poslata(kada: sat.sada()),
+            ),
           ],
         ),
       ),
@@ -120,13 +133,21 @@ void main() {
 
     blocTest<ProfilBloc, ProfilStanje>(
       'brisanje poslednje prijave vodi u prazno stanje',
-      build: () => napravi(TestBaza(student: student, prijave: [prijava(stanje: Povucena(kada: sat.sada()))])),
+      build: () => napravi(
+        TestBaza(
+          student: student,
+          prijave: [prijava(stanje: Povucena(kada: sat.sada()))],
+        ),
+      ),
       act: ucitajPa(const BrisanjeZatrazeno(IdPrijave('p-1'))),
       skip: 3,
       expect: () => [isA<ProfilPrazan>().having((s) => s.obavestenje, 'obaveštenje', const PrijavaObrisana())],
     );
 
-    final baza = TestBaza(student: student, prijave: [prijava(stanje: Poslata(kada: sat.sada()))]);
+    final baza = TestBaza(
+      student: student,
+      prijave: [prijava(stanje: Poslata(kada: sat.sada()))],
+    );
     blocTest<ProfilBloc, ProfilStanje>(
       'greška porta tokom akcije: podaci ostaju, uz poruku o neuspehu',
       build: () => napravi(baza),

@@ -1,48 +1,78 @@
+import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:use_cases/use_cases.dart';
 
-import '../podaci/lazni_podaci.dart';
 import '../tekst/format.dart';
 import '../tekst/poruke_gresaka.dart';
 import '../tema/tema.dart';
 import '../widgeti/isprekidana_linija.dart';
 import '../widgeti/lista_uslova.dart';
 import '../widgeti/nije_pronadjeno.dart';
+import '../widgeti/prikazi_stanja.dart';
 import '../widgeti/zaglavlje.dart';
 
-class PonudaEkran extends StatefulWidget {
+class PonudaEkran extends StatelessWidget {
   const PonudaEkran({super.key, required this.idPonude});
 
   final IdPonude idPonude;
 
-  @override
-  State<PonudaEkran> createState() => _PonudaEkranState();
-}
+  static bool _trebaReagovati(PonudeStanje pre, PonudeStanje sad) =>
+      sad is PonudeUcitane &&
+      (sad.obavestenje != null || (pre is PonudeUcitane && !setEquals(pre.podaci.sacuvane, sad.podaci.sacuvane)));
 
-class _PonudaEkranState extends State<PonudaEkran> {
-  Future<void> _otvori(String deo) async {
-    final ovde = GoRouterState.of(context).matchedLocation;
-    await context.push('$ovde/$deo');
-    if (mounted) setState(() {});
+  void _reaguj(BuildContext context, PonudeStanje stanje) {
+    if (stanje is! PonudeUcitane) return;
+    switch (stanje.obavestenje) {
+      case CuvanjePonudeNeuspelo():
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Čuvanje ponude nije uspelo.')));
+        context.read<PonudeBloc>().add(const ObavestenjePonudaProcitano());
+      case null:
+        // Sačuvane ponude su promenjene: lista „Sačuvano" na Profilu treba nove podatke.
+        context.read<ProfilBloc>().add(const ProfilOsvezen());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final ponuda = skladiste.ponuda(widget.idPonude);
-    if (ponuda == null) return const NijePronadjenoEkran();
-
-    final univerzitet = skladiste.univerzitet(ponuda.idUniverziteta);
-    final sada = DateTime.now();
-    final postojeca = skladiste.mojaPrijavaZa(ponuda.id);
-    final uslovi = proveriUslove(
-      student: skladiste.student,
-      ponuda: ponuda,
-      svePrijave: skladiste.svePrijave,
-      sada: sada,
+    final bloc = context.read<PonudeBloc>();
+    return BlocConsumer<PonudeBloc, PonudeStanje>(
+      listenWhen: _trebaReagovati,
+      listener: _reaguj,
+      builder: (context, stanje) => switch (stanje) {
+        PonudeUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
+        PonudeGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const PonudeZatrazene()))),
+        PonudePrazne() => const NijePronadjenoEkran(),
+        PonudeUcitane(:final podaci) => switch (podaci.ponuda(idPonude)) {
+          null => const NijePronadjenoEkran(),
+          final Ponuda ponuda => _Ponuda(podaci: podaci, ponuda: ponuda),
+        },
+      },
     );
-    final slobodno = preostalaMesta(ponuda, skladiste.svePrijave);
-    final sacuvana = skladiste.jeSacuvana(ponuda.id);
+  }
+}
+
+class _Ponuda extends StatelessWidget {
+  const _Ponuda({required this.podaci, required this.ponuda});
+
+  final PregledPodataka podaci;
+  final Ponuda ponuda;
+
+  void _otvori(BuildContext context, String deo) {
+    final ovde = GoRouterState.of(context).matchedLocation;
+    context.push('$ovde/$deo');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final univerzitet = podaci.univerzitet(ponuda.idUniverziteta);
+    final postojeca = podaci.mojaPrijavaZa(ponuda.id);
+    final uslovi = podaci.uslovi(ponuda);
+    final slobodno = podaci.slobodnaMesta(ponuda);
+    final sacuvana = podaci.jeSacuvana(ponuda.id);
     final tekst = Theme.of(context).textTheme;
     final belo = Boje.bela.withValues(alpha: 0.9);
 
@@ -72,7 +102,7 @@ class _PonudaEkranState extends State<PonudaEkran> {
                       ikona: sacuvana ? Icons.bookmark : Icons.bookmark_border,
                       boja: Boje.zuta,
                       opis: sacuvana ? 'Ukloni iz sačuvanih' : 'Sačuvaj ponudu',
-                      onPressed: () => setState(() => skladiste.promeniSacuvanu(ponuda.id)),
+                      onPressed: () => context.read<PonudeBloc>().add(SacuvanaPromenjena(ponuda.id)),
                     ),
                   ],
                 ),
@@ -128,7 +158,7 @@ class _PonudaEkranState extends State<PonudaEkran> {
                   ),
                 ),
                 const _Naslov('Uslovi'),
-                ListaUslova(ponuda: ponuda, student: skladiste.student, svePrijave: skladiste.svePrijave, sada: sada),
+                ListaUslova(ponuda: ponuda, student: podaci.student, uslovi: uslovi),
                 if (ponuda.napomena case final napomena?) ...[
                   const _Naslov('Napomena'),
                   Container(
@@ -155,19 +185,19 @@ class _PonudaEkranState extends State<PonudaEkran> {
                   'Objavio koordinator · ${univerzitet.naziv} · ${formatDatum(ponuda.objavljena)}',
                   style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12),
                 ),
-                if (postojeca == null && uslovi.greskaIliNull != null) ...[
+                if (postojeca == null && uslovi.ishod.greskaIliNull != null) ...[
                   const SizedBox(height: 16),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(color: Boje.greskaPozadina, borderRadius: BorderRadius.circular(16)),
                     child: Text(
-                      'Ne možete se prijaviti: ${uslovi.greskaIliNull!.poruka}',
+                      'Ne možete se prijaviti: ${uslovi.ishod.greskaIliNull!.poruka}',
                       style: tekst.bodyMedium?.copyWith(color: Boje.greska),
                     ),
                   ),
                 ],
-                if (postojeca == null && uslovi.jeUspeh && slobodno == 0) ...[
+                if (postojeca == null && uslovi.ispunjeni && slobodno == 0) ...[
                   const SizedBox(height: 16),
                   Container(
                     width: double.infinity,
@@ -193,12 +223,12 @@ class _PonudaEkranState extends State<PonudaEkran> {
           ? _DugmeSaNatpisom(
               natpis: 'Moja prijava',
               ikona: Icons.description_outlined,
-              onPressed: () => _otvori('moja/${postojeca.id.vrednost}'),
+              onPressed: () => _otvori(context, 'moja/${postojeca.id.vrednost}'),
             )
           : _DugmeSaNatpisom(
-              natpis: uslovi.jeUspeh ? 'Prijavi se' : 'Uslovi nisu ispunjeni',
+              natpis: uslovi.ispunjeni ? 'Prijavi se' : 'Uslovi nisu ispunjeni',
               ikona: Icons.add,
-              onPressed: uslovi.jeUspeh ? () => _otvori('prijava') : null,
+              onPressed: uslovi.ispunjeni ? () => _otvori(context, 'prijava') : null,
             ),
     );
   }

@@ -1,34 +1,70 @@
+import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:use_cases/use_cases.dart';
 
-import '../podaci/lazni_podaci.dart';
 import '../tekst/format.dart';
 import '../tekst/poruke_gresaka.dart';
 import '../tema/tema.dart';
 import '../widgeti/lista_uslova.dart';
 import '../widgeti/nije_pronadjeno.dart';
 import '../widgeti/oznaka_drzave.dart';
+import '../widgeti/prikazi_stanja.dart';
 import '../widgeti/zaglavlje.dart';
 
-class FormularEkran extends StatefulWidget {
-  const FormularEkran({super.key, required this.idPonude, this.idPrijave});
+class FormularEkran extends StatelessWidget {
+  const FormularEkran({super.key, this.idPonude, this.idPrijave})
+    : assert(idPonude != null || idPrijave != null, 'Formular je za novu prijavu ili za izmenu.');
 
   static const kljucPisma = Key('motivaciono-pismo');
 
-  final IdPonude idPonude;
+  final IdPonude? idPonude;
   final IdPrijave? idPrijave;
 
   @override
-  State<FormularEkran> createState() => _FormularEkranState();
+  Widget build(BuildContext context) {
+    final bloc = context.read<PonudeBloc>();
+    return BlocBuilder<PonudeBloc, PonudeStanje>(
+      builder: (context, stanje) {
+        switch (stanje) {
+          case PonudeUcitavanje():
+            return const EkranStanja(child: PrikazUcitavanja());
+          case PonudeGreska():
+            return EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const PonudeZatrazene())));
+          case PonudePrazne():
+            return const NijePronadjenoEkran();
+          case PonudeUcitane(:final podaci):
+            final postojeca = idPrijave == null ? null : podaci.prijava(idPrijave!);
+            if (idPrijave != null && postojeca == null) return const NijePronadjenoEkran();
+            final ponuda = podaci.ponuda(idPonude ?? postojeca!.idPonude);
+            if (ponuda == null) return const NijePronadjenoEkran();
+            return _Formular(podaci: podaci, ponuda: ponuda, postojeca: postojeca);
+        }
+      },
+    );
+  }
 }
 
-class _FormularEkranState extends State<FormularEkran> {
+class _Formular extends StatefulWidget {
+  const _Formular({required this.podaci, required this.ponuda, required this.postojeca});
+
+  final PregledPodataka podaci;
+  final Ponuda ponuda;
+  final Prijava? postojeca;
+
+  @override
+  State<_Formular> createState() => _FormularState();
+}
+
+class _FormularState extends State<_Formular> {
   final _kljucForme = GlobalKey<FormState>();
-  late final Prijava? _postojeca = widget.idPrijave == null ? null : skladiste.prijava(widget.idPrijave!);
-  late final _pismo = TextEditingController(text: _postojeca?.motivacionoPismo.tekst ?? '');
-  late final _napomena = TextEditingController(text: _postojeca?.napomena ?? '');
+  late final _pismo = TextEditingController(text: widget.postojeca?.motivacionoPismo.tekst ?? '');
+  late final _napomena = TextEditingController(text: widget.postojeca?.napomena ?? '');
+
+  bool _poslednjeSlanje = false;
 
   @override
   void dispose() {
@@ -37,7 +73,7 @@ class _FormularEkranState extends State<FormularEkran> {
     super.dispose();
   }
 
-  bool get _menjaPoslatu => !dozvoljenPrelaz(_postojeca?.stanje ?? const UPripremi(), Poslata(kada: DateTime.now()));
+  bool get _menjaPoslatu => !widget.podaci.mozeSePoslati(widget.postojeca);
 
   String? _proveriPismo(String? unos) => MotivacionoPismo.proveri(unos ?? '').greskaIliNull?.poruka;
 
@@ -46,75 +82,61 @@ class _FormularEkranState extends State<FormularEkran> {
     return tekst.isEmpty ? null : tekst;
   }
 
-  void _poruka(String tekst) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tekst)));
+  void _poruka(String tekst, {SnackBarAction? akcija}) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tekst), action: akcija));
 
-  Prijava? _prijavaIzForme() {
-    if (!_kljucForme.currentState!.validate()) return null;
+  void _zatrazi({required bool posalji}) {
+    if (!mounted || !_kljucForme.currentState!.validate()) return;
     final pismo = MotivacionoPismo.proveri(_pismo.text).vrednostIliNull!;
-    final postojeca = _postojeca;
-
-    if (postojeca == null) {
-      final sada = DateTime.now();
-      return Prijava(
-        id: IdPrijave('p-${sada.microsecondsSinceEpoch}'),
-        idStudenta: skladiste.korisnik.id,
-        idPonude: widget.idPonude,
-        motivacionoPismo: pismo,
-        napomena: _napomenaIliNull,
-        napravljena: sada,
-      );
-    }
-
-    final izmena = izmeniPrijavu(
-      postojeca,
-      ko: skladiste.korisnik,
-      motivacionoPismo: pismo,
-      napomena: _napomenaIliNull,
+    _poslednjeSlanje = posalji;
+    final bloc = context.read<FormularPrijaveBloc>();
+    bloc.add(
+      posalji
+          ? SlanjeZatrazeno(pismo: pismo, napomena: _napomenaIliNull)
+          : CuvanjeZatrazeno(pismo: pismo, napomena: _napomenaIliNull),
     );
-    if (izmena case Neuspeh(:final greska)) {
-      _poruka(greska.poruka);
-      return null;
-    }
-    return izmena.vrednostIliNull;
   }
 
-  void _sacuvaj() {
-    final prijava = _prijavaIzForme();
-    if (prijava == null) return;
-    skladiste.sacuvaj(prijava);
-    _poruka(_postojeca == null ? 'Prijava je sačuvana u pripremi.' : 'Izmene su sačuvane.');
-    context.pop();
-  }
-
-  void _posalji(Ponuda ponuda) {
-    final prijava = _prijavaIzForme();
-    if (prijava == null) return;
-    final rezultat = posaljiPrijavu(
-      prijava,
-      ko: skladiste.korisnik,
-      student: skladiste.student,
-      ponuda: ponuda,
-      svePrijave: skladiste.svePrijave,
-      sada: DateTime.now(),
-    );
-    switch (rezultat) {
-      case Uspeh(:final vrednost):
-        skladiste.sacuvaj(vrednost);
-        _poruka('Prijava je poslata. Čeka odluku koordinatora.');
+  void _reaguj(BuildContext context, FormularPrijaveStanje stanje) {
+    switch (stanje) {
+      case FormularSacuvan(:final poslata):
+        context.read<PonudeBloc>().add(const PonudeOsvezene());
+        context.read<ProfilBloc>().add(const ProfilOsvezen());
+        _poruka(switch ((poslata, widget.postojeca)) {
+          (true, _) => 'Prijava je poslata. Čeka odluku koordinatora.',
+          (false, null) => 'Prijava je sačuvana u pripremi.',
+          (false, _) => 'Izmene su sačuvane.',
+        });
         context.pop();
-      case Neuspeh(:final greska):
+      case FormularOdbijen(:final greska):
         _poruka(greska.poruka);
+      case FormularNeuspeo():
+        _poruka(
+          'Prijava nije sačuvana.',
+          akcija: SnackBarAction(
+            label: 'Pokušaj ponovo',
+            onPressed: () => _zatrazi(posalji: _poslednjeSlanje),
+          ),
+        );
+      case FormularSpreman() || FormularUToku():
+        break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final ponuda = skladiste.ponuda(widget.idPonude);
-    if (ponuda == null) return const NijePronadjenoEkran();
+    return BlocConsumer<FormularPrijaveBloc, FormularPrijaveStanje>(
+      listener: _reaguj,
+      builder: (context, stanje) => _ekran(context, uToku: stanje is FormularUToku),
+    );
+  }
 
-    final univerzitet = skladiste.univerzitet(ponuda.idUniverziteta);
-    final student = skladiste.student;
-    final postojeca = _postojeca;
+  Widget _ekran(BuildContext context, {required bool uToku}) {
+    final ponuda = widget.ponuda;
+    final podaci = widget.podaci;
+    final univerzitet = podaci.univerzitet(ponuda.idUniverziteta);
+    final student = podaci.student;
+    final postojeca = widget.postojeca;
     final stanje = postojeca?.stanje ?? const UPripremi();
     final tekst = Theme.of(context).textTheme;
     final sporedni = tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12);
@@ -192,6 +214,7 @@ class _FormularEkranState extends State<FormularEkran> {
                   TextFormField(
                     key: FormularEkran.kljucPisma,
                     controller: _pismo,
+                    enabled: !uToku,
                     minLines: 5,
                     maxLines: 10,
                     maxLength: MotivacionoPismo.najvise,
@@ -203,6 +226,7 @@ class _FormularEkranState extends State<FormularEkran> {
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _napomena,
+                    enabled: !uToku,
                     minLines: 2,
                     maxLines: 4,
                     textCapitalization: TextCapitalization.sentences,
@@ -215,12 +239,7 @@ class _FormularEkranState extends State<FormularEkran> {
                   if (!_menjaPoslatu) ...[
                     const _Korak(broj: 3, naslov: 'Provera pre slanja'),
                     const SizedBox(height: 6),
-                    ProveraPreSlanja(
-                      ponuda: ponuda,
-                      student: student,
-                      svePrijave: skladiste.svePrijave,
-                      sada: DateTime.now(),
-                    ),
+                    ProveraPreSlanja(ponuda: ponuda, student: student, uslovi: podaci.uslovi(ponuda)),
                   ],
                 ],
               ),
@@ -235,18 +254,28 @@ class _FormularEkranState extends State<FormularEkran> {
         ),
         child: SafeArea(
           minimum: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          // Dok zahtev traje, dugmad su isključena (stanje FormularUToku).
           child: _menjaPoslatu
-              ? FilledButton(onPressed: _sacuvaj, child: const Text('Sačuvaj izmene'))
+              ? FilledButton(
+                  onPressed: uToku ? null : () => _zatrazi(posalji: false),
+                  child: const Text('Sačuvaj izmene'),
+                )
               : Row(
                   children: [
                     Expanded(
                       flex: 4,
-                      child: OutlinedButton(onPressed: _sacuvaj, child: const Text('Sačuvaj')),
+                      child: OutlinedButton(
+                        onPressed: uToku ? null : () => _zatrazi(posalji: false),
+                        child: const Text('Sačuvaj'),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       flex: 5,
-                      child: FilledButton(onPressed: () => _posalji(ponuda), child: const Text('Pošalji prijavu')),
+                      child: FilledButton(
+                        onPressed: uToku ? null : () => _zatrazi(posalji: true),
+                        child: const Text('Pošalji prijavu'),
+                      ),
                     ),
                   ],
                 ),
