@@ -1,6 +1,5 @@
 import 'package:domain/domain.dart';
 
-import 'lazno_skladiste.dart';
 
 const pocetniKorisnik = Korisnik(id: _andrej, korisnickoIme: 'andrej', uloga: Uloga.student);
 
@@ -18,15 +17,6 @@ const pocetniStudent = Student(
 );
 
 const pocetneSacuvane = {IdPonude('po-2'), IdPonude('po-7'), IdPonude('po-8')};
-
-final skladiste = LaznoSkladiste(
-  korisnik: pocetniKorisnik,
-  student: pocetniStudent,
-  univerziteti: pocetniUniverziteti,
-  ponude: List.of(pocetnePonude),
-  svePrijave: List.of(pocetnePrijave),
-  sacuvane: Set.of(pocetneSacuvane),
-);
 
 final DateTime _danas = () {
   final sada = DateTime.now();
