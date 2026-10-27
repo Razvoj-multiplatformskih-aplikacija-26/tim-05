@@ -22,16 +22,16 @@ class KontroleLaznihPodataka extends StatelessWidget {
     final baza = context.read<ZavisnostiAplikacije>().laznaBaza;
     if (baza == null) return const SizedBox.shrink();
     return PopupMenuButton<_Akcija>(
-      tooltip: 'Lazni podaci',
+      tooltip: 'Lažni podaci',
       icon: const Icon(Icons.bug_report_outlined, color: Boje.bela),
       onSelected: (akcija) {
         switch (akcija) {
           case _Akcija.greska:
             baza.neuspesniZahtevi = 1;
-            _javi(context, 'Sledeci zahtev nece uspeti.');
+            _javi(context, 'Sledeći zahtev nece uspeti.');
           case _Akcija.prazno:
             naPrazanOdgovor(baza);
-            _javi(context, 'Sledeci odgovor bice prazan.');
+            _javi(context, 'Sledeći odgovor biće prazan.');
           case _Akcija.ucitaj:
             naPonovnoUcitavanje();
         }
@@ -39,15 +39,15 @@ class KontroleLaznihPodataka extends StatelessWidget {
       itemBuilder: (context) => const [
         PopupMenuItem(
           value: _Akcija.greska,
-          child: ListTile(leading: Icon(Icons.cloud_off_outlined), title: Text('Greska sledeceg zahteva')),
+          child: ListTile(leading: Icon(Icons.cloud_off_outlined), title: Text('Greška sledećeg zahteva')),
         ),
         PopupMenuItem(
           value: _Akcija.prazno,
-          child: ListTile(leading: Icon(Icons.inbox_outlined), title: Text('Prazan sledeci odgovor')),
+          child: ListTile(leading: Icon(Icons.inbox_outlined), title: Text('Prazan sledeći odgovor')),
         ),
         PopupMenuItem(
           value: _Akcija.ucitaj,
-          child: ListTile(leading: Icon(Icons.refresh), title: Text('Ponovo ucitaj')),
+          child: ListTile(leading: Icon(Icons.refresh), title: Text('Ponovo učitaj')),
         ),
       ],
     );

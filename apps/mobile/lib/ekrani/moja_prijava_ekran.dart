@@ -1,29 +1,116 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:use_cases/use_cases.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:blocs/blocs.dart';
 
-import '../podaci/lazni_podaci.dart';
 import '../tekst/format.dart';
 import '../tekst/poruke_gresaka.dart';
 import '../tema/tema.dart';
 import '../widgeti/nije_pronadjeno.dart';
 import '../widgeti/oznaka_drzave.dart';
 import '../widgeti/oznaka_stanja.dart';
+import '../widgeti/prikazi_stanja.dart';
 import '../widgeti/zaglavlje.dart';
 
-class MojaPrijavaEkran extends StatefulWidget {
+class MojaPrijavaEkran extends StatelessWidget {
   const MojaPrijavaEkran({super.key, required this.idPrijave});
 
   final IdPrijave idPrijave;
 
+  static ProfilObavestenje? _obavestenje(ProfilStanje stanje) => switch (stanje) {
+    ProfilSaPodacima(:final obavestenje) => obavestenje,
+    ProfilUcitavanje() || ProfilGreska() => null,
+  };
+
+  static bool _mojaPoruka(ProfilStanje pre, ProfilStanje sad) => switch (_obavestenje(sad)) {
+    null || ProfilSacuvan() => false,
+    _ => true,
+  };
+
+  void _reaguj(BuildContext context, ProfilStanje stanje) {
+    final obavestenje = _obavestenje(stanje);
+    if (obavestenje == null) return;
+    final podaci = switch (stanje) {
+      ProfilSaPodacima(:final podaci) => podaci,
+      ProfilUcitavanje() || ProfilGreska() => null,
+    };
+    final idPonude = podaci?.prijava(idPrijave)?.idPonude;
+    final ponuda = idPonude == null ? null : podaci?.ponuda(idPonude);
+    final semestar = ponuda == null ? 'isti semestar' : nazivSemestra(ponuda.semestar).toLowerCase();
+
+    final String poruka;
+    var uspeh = true;
+    switch (obavestenje) {
+      case PrijavaPovucena():
+        poruka = 'Prijava je povučena.';
+      case MestoPotvrdjeno(brojPovucenih: 0):
+        poruka = 'Mesto je potvrđeno.';
+      case MestoPotvrdjeno(:final brojPovucenih):
+        poruka = 'Mesto je potvrđeno. Povučeno ostalih prijava za $semestar: $brojPovucenih.';
+      case MestoOdbijeno():
+        poruka = 'Mesto je odbijeno.';
+      case PrijavaObrisana():
+        poruka = 'Prijava je obrisana.';
+      case ProfilSacuvan():
+        return;
+      case AkcijaOdbijena(:final greska):
+        poruka = greska.poruka;
+        uspeh = false;
+      case AkcijaNeuspela():
+        poruka = 'Radnja nije uspela. Proverite vezu i pokušajte ponovo.';
+        uspeh = false;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(poruka)));
+    context.read<ProfilBloc>().add(const ObavestenjeProfilaProcitano());
+
+    if (uspeh) context.read<PonudeBloc>().add(const PonudeOsvezene());
+    if (obavestenje is PrijavaObrisana) context.pop();
+  }
+
   @override
-  State<MojaPrijavaEkran> createState() => _MojaPrijavaEkranState();
+  Widget build(BuildContext context) {
+    final bloc = context.read<ProfilBloc>();
+    return BlocConsumer<ProfilBloc, ProfilStanje>(
+      listenWhen: _mojaPoruka,
+      listener: _reaguj,
+      builder: (context, stanje) => switch (stanje) {
+        ProfilUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
+        ProfilGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const ProfilZatrazen()))),
+        ProfilSaPodacima(:final podaci, :final uToku) => _prikaz(context, podaci, uToku: uToku == idPrijave),
+      },
+    );
+  }
+
+  Widget _prikaz(BuildContext context, PregledPodataka podaci, {required bool uToku}) {
+    final prijava = podaci.prijava(idPrijave);
+    if (prijava == null) {
+      final zatvaraSe = ModalRoute.of(context)?.isCurrent == false;
+      return zatvaraSe ? const Scaffold() : const NijePronadjenoEkran();
+    }
+    final ponuda = podaci.ponuda(prijava.idPonude);
+    if (ponuda == null) return const NijePronadjenoEkran();
+    return _MojaPrijava(podaci: podaci, prijava: prijava, ponuda: ponuda, uToku: uToku);
+  }
 }
 
-class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
-  void _poruka(String tekst) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tekst)));
+class _MojaPrijava extends StatelessWidget {
+  const _MojaPrijava({required this.podaci, required this.prijava, required this.ponuda, required this.uToku});
 
-  Future<bool> _potvrdi({required String naslov, required String tekst, required String dugme}) async {
+  final PregledPodataka podaci;
+  final Prijava prijava;
+  final Ponuda ponuda;
+
+  final bool uToku;
+
+  Future<bool> _potvrdi(
+    BuildContext context, {
+    required String naslov,
+    required String tekst,
+    required String dugme,
+  }) async {
     final odgovor = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -38,102 +125,30 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
     return odgovor ?? false;
   }
 
-  void _primeni(Rezultat<Prijava> rezultat, String porukaUspeha) {
-    switch (rezultat) {
-      case Uspeh(:final vrednost):
-        setState(() => skladiste.sacuvaj(vrednost));
-        _poruka(porukaUspeha);
-      case Neuspeh(:final greska):
-        _poruka(greska.poruka);
-    }
+  Future<void> _poslePotvrde(
+    BuildContext context,
+    ProfilDogadjaj dogadjaj, {
+    required String naslov,
+    required String tekst,
+    required String dugme,
+  }) async {
+    final bloc = context.read<ProfilBloc>();
+    if (await _potvrdi(context, naslov: naslov, tekst: tekst, dugme: dugme)) bloc.add(dogadjaj);
   }
 
-  Future<void> _povuci(Prijava prijava, String opis) async {
-    final potvrdjeno = await _potvrdi(
-      naslov: 'Povući prijavu?',
-      tekst: '$opis. Povučena prijava se ne može vratiti.',
-      dugme: 'Povuci',
-    );
-    if (!potvrdjeno || !mounted) return;
-    _primeni(povuciPrijavu(prijava, ko: skladiste.korisnik, sada: DateTime.now()), 'Prijava je povučena.');
-  }
-
-  Future<void> _obrisi(Prijava prijava, String opis) async {
-    final potvrdjeno = await _potvrdi(
-      naslov: 'Obrisati prijavu?',
-      tekst: '$opis. Da li ste sigurni da želite da obrišete ovu prijavu? Obrisana prijava se ne može vratiti.',
-      dugme: 'Obriši',
-    );
-    if (!potvrdjeno || !mounted) return;
-    switch (obrisiPrijavu(prijava, ko: skladiste.korisnik)) {
-      case Uspeh():
-        skladiste.obrisi(prijava.id);
-        _poruka('Prijava je obrisana.');
-        context.pop();
-      case Neuspeh(:final greska):
-        _poruka(greska.poruka);
-    }
-  }
-
-  Future<void> _odbijMesto(Prijava prijava, String opis) async {
-    final potvrdjeno = await _potvrdi(
-      naslov: 'Odbiti ponuđeno mesto?',
-      tekst: '$opis. Prijava će biti povučena i mesto će dobiti drugi student.',
-      dugme: 'Odbij mesto',
-    );
-    if (!potvrdjeno || !mounted) return;
-    _primeni(odbijMesto(prijava, ko: skladiste.korisnik, sada: DateTime.now()), 'Mesto je odbijeno.');
-  }
-
-  Future<void> _prihvatiMesto(Prijava prijava, Ponuda ponuda, String opis) async {
-    final semestar = nazivSemestra(ponuda.semestar).toLowerCase();
-    final potvrdjeno = await _potvrdi(
-      naslov: 'Prihvatiti mesto?',
-      tekst: '$opis. Ako prihvatite ovo mesto, vaše ostale prijave za $semestar biće povučene.',
-      dugme: 'Prihvati mesto',
-    );
-    if (!potvrdjeno || !mounted) return;
-    final rezultat = potvrdiMesto(
-      prijava,
-      ko: skladiste.korisnik,
-      ponuda: ponuda,
-      ponude: skladiste.ponude,
-      svePrijave: skladiste.svePrijave,
-      sada: DateTime.now(),
-    );
-    switch (rezultat) {
-      case Uspeh(:final vrednost):
-        setState(() => skladiste.sacuvajSve(vrednost));
-        final povuceno = vrednost.length - 1;
-        _poruka(
-          povuceno == 0
-              ? 'Mesto je potvrđeno.'
-              : 'Mesto je potvrđeno. Povučeno ostalih prijava za $semestar: $povuceno.',
-        );
-      case Neuspeh(:final greska):
-        _poruka(greska.poruka);
-    }
-  }
-
-  Future<void> _izmeni() async {
+  void _izmeni(BuildContext context) {
     final ovde = GoRouterState.of(context).matchedLocation;
-    await context.push('$ovde/izmena');
-    if (mounted) setState(() {});
+    context.push('$ovde/izmena');
   }
 
   @override
   Widget build(BuildContext context) {
-    final prijava = skladiste.prijava(widget.idPrijave);
-    if (prijava == null) return const NijePronadjenoEkran();
-    final ponuda = skladiste.ponuda(prijava.idPonude);
-    if (ponuda == null) return const NijePronadjenoEkran();
-
-    final univerzitet = skladiste.univerzitet(ponuda.idUniverziteta);
-    final student = skladiste.student;
+    final univerzitet = podaci.univerzitet(ponuda.idUniverziteta);
+    final student = podaci.student;
     final stanje = prijava.stanje;
     final opis = '${univerzitet.naziv}, ${nazivSemestra(ponuda.semestar).toLowerCase()}';
     final mozeIzmenu = stanje.mozeSeMenjati;
-    final mozePovlacenje = stanje is! Prihvacena && dozvoljenPrelaz(stanje, Povucena(kada: DateTime.now()));
+    final mozePovlacenje = podaci.mozeSePovuci(prijava);
     final tekst = Theme.of(context).textTheme;
     final jezici = [
       for (final jezik in student.znanjeJezika.entries) '${nazivJezika(jezik.key)} ${jezik.value.oznaka}',
@@ -153,11 +168,19 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
                     const SizedBox(width: 12),
                     Text('Moja prijava', style: tekst.headlineSmall?.copyWith(color: Boje.bela, fontSize: 20)),
                     const Spacer(),
-                    if (stanje.mozeSeObrisati)
+                    if (stanje.mozeSeObrisati && !uToku)
                       DugmeZaglavlja(
                         ikona: Icons.delete_outline,
                         opis: 'Obriši prijavu',
-                        onPressed: () => _obrisi(prijava, opis),
+                        onPressed: () => _poslePotvrde(
+                          context,
+                          BrisanjeZatrazeno(prijava.id),
+                          naslov: 'Obrisati prijavu?',
+                          tekst:
+                              '$opis. Da li ste sigurni da želite da obrišete ovu prijavu? '
+                              'Obrisana prijava se ne može vratiti.',
+                          dugme: 'Obriši',
+                        ),
                       ),
                   ],
                 ),
@@ -196,11 +219,34 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (uToku)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: LinearProgressIndicator(color: Boje.bordo),
+                  ),
                 if (stanje is Prihvacena)
                   _PonudjenoMesto(
                     semestar: nazivSemestra(ponuda.semestar).toLowerCase(),
-                    onPrihvati: () => _prihvatiMesto(prijava, ponuda, opis),
-                    onOdbij: () => _odbijMesto(prijava, opis),
+                    onPrihvati: uToku
+                        ? null
+                        : () => _poslePotvrde(
+                            context,
+                            PotvrdaMestaZatrazena(prijava.id),
+                            naslov: 'Prihvatiti mesto?',
+                            tekst:
+                                '$opis. Ako prihvatite ovo mesto, vaše ostale prijave za '
+                                '${nazivSemestra(ponuda.semestar).toLowerCase()} biće povučene.',
+                            dugme: 'Prihvati mesto',
+                          ),
+                    onOdbij: uToku
+                        ? null
+                        : () => _poslePotvrde(
+                            context,
+                            OdbijanjeMestaZatrazeno(prijava.id),
+                            naslov: 'Odbiti ponuđeno mesto?',
+                            tekst: '$opis. Prijava će biti povučena i mesto će dobiti drugi student.',
+                            dugme: 'Odbij mesto',
+                          ),
                   ),
                 const _Naslov('Tok prijave'),
                 _TokPrijave(koraci: _koraci(prijava)),
@@ -236,7 +282,15 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
                     if (mozePovlacenje)
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => _povuci(prijava, opis),
+                          onPressed: uToku
+                              ? null
+                              : () => _poslePotvrde(
+                                  context,
+                                  PovlacenjeZatrazeno(prijava.id),
+                                  naslov: 'Povući prijavu?',
+                                  tekst: '$opis. Povučena prijava se ne može vratiti.',
+                                  dugme: 'Povuci',
+                                ),
                           style: OutlinedButton.styleFrom(
                             backgroundColor: Boje.bela,
                             foregroundColor: Boje.opasnost,
@@ -249,7 +303,7 @@ class _MojaPrijavaEkranState extends State<MojaPrijavaEkran> {
                     if (mozeIzmenu)
                       Expanded(
                         child: FilledButton(
-                          onPressed: _izmeni,
+                          onPressed: uToku ? null : () => _izmeni(context),
                           child: Text(stanje is UPripremi ? 'Izmeni i pošalji' : 'Izmeni'),
                         ),
                       ),
@@ -446,8 +500,8 @@ class _PonudjenoMesto extends StatelessWidget {
   const _PonudjenoMesto({required this.semestar, required this.onPrihvati, required this.onOdbij});
 
   final String semestar;
-  final VoidCallback onPrihvati;
-  final VoidCallback onOdbij;
+  final VoidCallback? onPrihvati;
+  final VoidCallback? onOdbij;
 
   @override
   Widget build(BuildContext context) {
