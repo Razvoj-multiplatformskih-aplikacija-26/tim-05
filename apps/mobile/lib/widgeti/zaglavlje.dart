@@ -53,7 +53,7 @@ class DugmeZaglavlja extends StatelessWidget {
   final IconData ikona;
 
   final String opis;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color boja;
 
   @override

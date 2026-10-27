@@ -50,10 +50,19 @@ final class SacuvajPrijavu {
 
     var zaCuvanje = prijava;
     if (posalji) {
-      final ponuda = _ponuda(await ponude.ponude(), prijava.idPonude);
+      final svePonude = await ponude.ponude();
+      final ponuda = _ponuda(svePonude, prijava.idPonude);
       if (ponuda == null) return const Neuspeh(NijePronadjeno());
       final student = await studenti.student(ko.id);
-      final slanje = posaljiPrijavu(prijava, ko: ko, student: student, ponuda: ponuda, svePrijave: sve, sada: sada);
+      final slanje = posaljiPrijavu(
+        prijava,
+        ko: ko,
+        student: student,
+        ponuda: ponuda,
+        svePrijave: sve,
+        sada: sada,
+        ponude: svePonude,
+      );
       if (slanje case Neuspeh(:final greska)) return Neuspeh(greska);
       zaCuvanje = slanje.vrednostIliNull!;
     }

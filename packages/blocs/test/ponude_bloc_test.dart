@@ -68,7 +68,11 @@ void main() {
     expect: () => [
       const PonudeUcitavanje(),
       isA<PonudeUcitane>().having((s) => s.podaci.jeSacuvana(const IdPonude('po-1')), 'sačuvana', isFalse),
-      isA<PonudeUcitane>().having((s) => s.podaci.jeSacuvana(const IdPonude('po-1')), 'sačuvana', isTrue),
+      isA<PonudeUcitane>().having((s) => s.cuvaSe, 'čuva se', const IdPonude('po-1')),
+      isA<PonudeUcitane>()
+          .having((s) => s.podaci.jeSacuvana(const IdPonude('po-1')), 'sačuvana', isTrue)
+          .having((s) => s.cuvaSe, 'čuva se', isNull)
+          .having((s) => s.obavestenje, 'obaveštenje', const PonudaSacuvana()),
     ],
   );
 
@@ -85,7 +89,10 @@ void main() {
     expect: () => [
       const PonudeUcitavanje(),
       isA<PonudeUcitane>().having((s) => s.obavestenje, 'obaveštenje', isNull),
-      isA<PonudeUcitane>().having((s) => s.obavestenje, 'obaveštenje', isA<CuvanjePonudeNeuspelo>()),
+      isA<PonudeUcitane>().having((s) => s.cuvaSe, 'čuva se', const IdPonude('po-1')),
+      isA<PonudeUcitane>()
+          .having((s) => s.cuvaSe, 'čuva se', isNull)
+          .having((s) => s.obavestenje, 'obaveštenje', isA<CuvanjePonudeNeuspelo>()),
     ],
   );
 }

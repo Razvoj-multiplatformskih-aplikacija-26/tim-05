@@ -1,6 +1,5 @@
 import 'package:domain/domain.dart';
 
-
 const pocetniKorisnik = Korisnik(id: _andrej, korisnickoIme: 'andrej', uloga: Uloga.student);
 
 const pocetniStudent = Student(

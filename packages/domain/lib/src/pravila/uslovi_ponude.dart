@@ -4,6 +4,7 @@ import '../prijava/prijava.dart';
 import '../rezultat.dart';
 import '../student.dart';
 import 'mesta.dart';
+import '../prijava/stanje_prijave.dart';
 
 const najviseAktivnihPrijava = 3;
 
@@ -19,11 +20,24 @@ bool imaJezik(Student student, Ponuda ponuda) {
 bool imaMestaZaNovuPrijavu(Student student, List<Prijava> svePrijave) =>
     aktivnePrijave(student.id, svePrijave).length < najviseAktivnihPrijava;
 
+bool imaPotvrdjenoMesto(
+  Student student,
+  Ponuda ponuda, {
+  required List<Prijava> svePrijave,
+  required List<Ponuda> ponude,
+}) => svePrijave.any(
+  (p) =>
+      p.idStudenta == student.id &&
+      p.stanje is Potvrdjena &&
+      ponude.any((druga) => druga.id == p.idPonude && druga.semestar == ponuda.semestar),
+);
+
 Rezultat<Ponuda> proveriUslove({
   required Student student,
   required Ponuda ponuda,
   required List<Prijava> svePrijave,
   required DateTime sada,
+  List<Ponuda> ponude = const [],
 }) {
   if (!rokNijeIstekao(ponuda, sada)) {
     return Neuspeh(RokIstekao(ponuda.rok));
@@ -35,6 +49,10 @@ Rezultat<Ponuda> proveriUslove({
 
   if (!imaJezik(student, ponuda)) {
     return Neuspeh(NedovoljanJezik(trazeni: ponuda.zahtevJezika, studentov: student.nivoZa(ponuda.zahtevJezika.jezik)));
+  }
+
+  if (imaPotvrdjenoMesto(student, ponuda, svePrijave: svePrijave, ponude: ponude)) {
+    return const Neuspeh(VecPotvrdjenoMesto());
   }
 
   if (!imaMestaZaNovuPrijavu(student, svePrijave)) {

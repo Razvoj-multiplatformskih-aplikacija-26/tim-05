@@ -31,10 +31,12 @@ final class PonudePrazne extends PonudeStanje {
 }
 
 final class PonudeUcitane extends PonudeStanje {
-  const PonudeUcitane({required this.podaci, this.filteri = const PonudeFilteri(), this.obavestenje});
+  const PonudeUcitane({required this.podaci, this.filteri = const PonudeFilteri(), this.cuvaSe, this.obavestenje});
 
   final PregledPodataka podaci;
   final PonudeFilteri filteri;
+
+  final IdPonude? cuvaSe;
   final PonudeObavestenje? obavestenje;
 
   List<Ponuda> get filtrirane => [
@@ -48,14 +50,19 @@ final class PonudeUcitane extends PonudeStanje {
 
   List<Jezik> get jezici => {for (final p in podaci.ponude) p.zahtevJezika.jezik}.toList();
 
-  PonudeUcitane copyWith({PonudeFilteri? filteri, PonudeObavestenje? Function()? obavestenje}) => PonudeUcitane(
+  PonudeUcitane copyWith({
+    PonudeFilteri? filteri,
+    IdPonude? Function()? cuvaSe,
+    PonudeObavestenje? Function()? obavestenje,
+  }) => PonudeUcitane(
     podaci: podaci,
     filteri: filteri ?? this.filteri,
+    cuvaSe: cuvaSe == null ? this.cuvaSe : cuvaSe(),
     obavestenje: obavestenje == null ? this.obavestenje : obavestenje(),
   );
 
   @override
-  List<Object?> get props => [podaci, filteri, obavestenje];
+  List<Object?> get props => [podaci, filteri, cuvaSe, obavestenje];
 
   @override
   String toString() => 'PonudeUcitane(${podaci.ponude.length} ponuda, ${filtrirane.length} prikazano)';
@@ -105,6 +112,14 @@ sealed class PonudeObavestenje extends Equatable {
 
   @override
   List<Object?> get props => const [];
+}
+
+final class PonudaSacuvana extends PonudeObavestenje {
+  const PonudaSacuvana();
+}
+
+final class PonudaUklonjena extends PonudeObavestenje {
+  const PonudaUklonjena();
 }
 
 final class CuvanjePonudeNeuspelo extends PonudeObavestenje {

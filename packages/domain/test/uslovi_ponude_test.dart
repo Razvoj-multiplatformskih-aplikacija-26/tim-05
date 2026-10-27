@@ -107,5 +107,41 @@ void main() {
       final rezultat = proveriUslove(student: studentAndrej, ponuda: ponuda(), svePrijave: neaktivne, sada: sada);
       expect(rezultat.jeUspeh, isTrue);
     });
+    test('posle potvrđenog mesta nema nove prijave za isti semestar', () {
+      final potvrdjena = prijava(
+        idPonude: 'po-2',
+        stanje: Potvrdjena(kada: sada),
+      );
+      final rezultat = proveriUslove(
+        student: studentAndrej,
+        ponuda: ponuda(),
+        svePrijave: [potvrdjena],
+        sada: sada,
+        ponude: [
+          ponuda(),
+          ponuda(id: 'po-2'),
+        ],
+      );
+      expect(rezultat.greskaIliNull, isA<VecPotvrdjenoMesto>());
+    });
+
+    test('potvrđeno mesto u drugom semestru ne smeta', () {
+      final potvrdjena = prijava(
+        idPonude: 'po-2',
+        stanje: Potvrdjena(kada: sada),
+      );
+      const letnji = Semestar(vrsta: VrstaSemestra.letnji, akademskaGodina: '2027/28');
+      final rezultat = proveriUslove(
+        student: studentAndrej,
+        ponuda: ponuda(),
+        svePrijave: [potvrdjena],
+        sada: sada,
+        ponude: [
+          ponuda(),
+          ponuda(id: 'po-2', semestar: letnji),
+        ],
+      );
+      expect(rezultat.jeUspeh, isTrue);
+    });
   });
 }

@@ -27,7 +27,6 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     expect(find.text('Još nemate prijava. Izaberite ponudu na Početnoj.'), findsOneWidget);
 
-    
     await tester.tap(find.byTooltip('Lažni podaci'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ponovo učitaj'));

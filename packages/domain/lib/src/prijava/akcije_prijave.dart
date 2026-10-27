@@ -26,6 +26,7 @@ Rezultat<Prijava> posaljiPrijavu(
   required Ponuda ponuda,
   required List<Prijava> svePrijave,
   required DateTime sada,
+  List<Ponuda> ponude = const [],
 }) {
   if (!PravaPristupa.jeVlasnik(ko, prijava)) return const Neuspeh(NemaPravo());
 
@@ -35,7 +36,7 @@ Rezultat<Prijava> posaljiPrijavu(
     return Neuspeh(NedozvoljenPrelaz(iz: prijava.stanje, u: novo));
   }
 
-  final uslovi = proveriUslove(student: student, ponuda: ponuda, svePrijave: svePrijave, sada: sada);
+  final uslovi = proveriUslove(student: student, ponuda: ponuda, svePrijave: svePrijave, sada: sada, ponude: ponude);
 
   if (uslovi case Neuspeh(:final greska)) return Neuspeh(greska);
 

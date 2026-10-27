@@ -48,7 +48,7 @@ final class PregledPodataka extends Equatable {
     rok: rokNijeIstekao(ponuda, sada),
     mestoZaPrijavu: imaMestaZaNovuPrijavu(student, svePrijave),
     brojAktivnih: brojAktivnih,
-    ishod: proveriUslove(student: student, ponuda: ponuda, svePrijave: svePrijave, sada: sada),
+    ishod: proveriUslove(student: student, ponuda: ponuda, svePrijave: svePrijave, sada: sada, ponude: ponude),
   );
 
   bool jeNova(Ponuda ponuda) => sada.difference(ponuda.objavljena).inDays < 7;

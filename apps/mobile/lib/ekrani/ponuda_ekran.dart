@@ -1,6 +1,5 @@
 import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -20,19 +19,22 @@ class PonudaEkran extends StatelessWidget {
 
   final IdPonude idPonude;
 
-  static bool _trebaReagovati(PonudeStanje pre, PonudeStanje sad) =>
-      sad is PonudeUcitane &&
-      (sad.obavestenje != null || (pre is PonudeUcitane && !setEquals(pre.podaci.sacuvane, sad.podaci.sacuvane)));
+  static bool _imaPoruku(PonudeStanje pre, PonudeStanje sad) => sad is PonudeUcitane && sad.obavestenje != null;
 
   void _reaguj(BuildContext context, PonudeStanje stanje) {
     if (stanje is! PonudeUcitane) return;
-    switch (stanje.obavestenje) {
-      case CuvanjePonudeNeuspelo():
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Čuvanje ponude nije uspelo.')));
-        context.read<PonudeBloc>().add(const ObavestenjePonudaProcitano());
-      case null:
-        // Sačuvane ponude su promenjene: lista „Sačuvano" na Profilu treba nove podatke.
-        context.read<ProfilBloc>().add(const ProfilOsvezen());
+    final obavestenje = stanje.obavestenje;
+    final poruka = switch (obavestenje) {
+      PonudaSacuvana() => 'Ponuda je sačuvana.',
+      PonudaUklonjena() => 'Ponuda je uklonjena iz sačuvanih.',
+      CuvanjePonudeNeuspelo() => 'Čuvanje ponude nije uspelo.',
+      null => null,
+    };
+    if (poruka == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(poruka)));
+    context.read<PonudeBloc>().add(const ObavestenjePonudaProcitano());
+    if (obavestenje is PonudaSacuvana || obavestenje is PonudaUklonjena) {
+      context.read<ProfilBloc>().add(const ProfilOsvezen());
     }
   }
 
@@ -40,15 +42,15 @@ class PonudaEkran extends StatelessWidget {
   Widget build(BuildContext context) {
     final bloc = context.read<PonudeBloc>();
     return BlocConsumer<PonudeBloc, PonudeStanje>(
-      listenWhen: _trebaReagovati,
+      listenWhen: _imaPoruku,
       listener: _reaguj,
       builder: (context, stanje) => switch (stanje) {
         PonudeUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
         PonudeGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const PonudeZatrazene()))),
         PonudePrazne() => const NijePronadjenoEkran(),
-        PonudeUcitane(:final podaci) => switch (podaci.ponuda(idPonude)) {
+        PonudeUcitane(:final podaci, :final cuvaSe) => switch (podaci.ponuda(idPonude)) {
           null => const NijePronadjenoEkran(),
-          final Ponuda ponuda => _Ponuda(podaci: podaci, ponuda: ponuda),
+          final Ponuda ponuda => _Ponuda(podaci: podaci, ponuda: ponuda, cuvaSe: cuvaSe == ponuda.id),
         },
       },
     );
@@ -56,10 +58,11 @@ class PonudaEkran extends StatelessWidget {
 }
 
 class _Ponuda extends StatelessWidget {
-  const _Ponuda({required this.podaci, required this.ponuda});
+  const _Ponuda({required this.podaci, required this.ponuda, required this.cuvaSe});
 
   final PregledPodataka podaci;
   final Ponuda ponuda;
+  final bool cuvaSe;
 
   void _otvori(BuildContext context, String deo) {
     final ovde = GoRouterState.of(context).matchedLocation;
@@ -98,12 +101,21 @@ class _Ponuda extends StatelessWidget {
                   children: [
                     DugmeZaglavlja(ikona: Icons.arrow_back, opis: 'Nazad', onPressed: () => context.pop()),
                     const Spacer(),
-                    DugmeZaglavlja(
-                      ikona: sacuvana ? Icons.bookmark : Icons.bookmark_border,
-                      boja: Boje.zuta,
-                      opis: sacuvana ? 'Ukloni iz sačuvanih' : 'Sačuvaj ponudu',
-                      onPressed: () => context.read<PonudeBloc>().add(SacuvanaPromenjena(ponuda.id)),
-                    ),
+                    if (cuvaSe)
+                      const SizedBox.square(
+                        dimension: 40,
+                        child: Padding(
+                          padding: EdgeInsets.all(10),
+                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Boje.zuta),
+                        ),
+                      )
+                    else
+                      DugmeZaglavlja(
+                        ikona: sacuvana ? Icons.bookmark : Icons.bookmark_border,
+                        boja: Boje.zuta,
+                        opis: sacuvana ? 'Ukloni iz sačuvanih' : 'Sačuvaj ponudu',
+                        onPressed: () => context.read<PonudeBloc>().add(SacuvanaPromenjena(ponuda.id)),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 18),
