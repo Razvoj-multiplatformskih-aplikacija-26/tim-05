@@ -7,7 +7,6 @@ import '../zavisnosti.dart';
 
 enum _Akcija { greska, prazno, ucitaj }
 
-
 class KontroleLaznihPodataka extends StatelessWidget {
   const KontroleLaznihPodataka({super.key, required this.naPrazanOdgovor, required this.naPonovnoUcitavanje});
 

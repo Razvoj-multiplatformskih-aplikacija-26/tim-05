@@ -1,5 +1,7 @@
+import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'ekrani/dobrodosli_ekran.dart';
@@ -10,8 +12,20 @@ import 'ekrani/pocetna_ekran.dart';
 import 'ekrani/ponuda_ekran.dart';
 import 'ekrani/profil_ekran.dart';
 import 'ekrani/uredi_profil_ekran.dart';
-import 'podaci/lazni_podaci.dart';
-import 'widgeti/nije_pronadjeno.dart';
+import 'zavisnosti.dart';
+
+Widget _formular(BuildContext context, {IdPonude? idPonude, IdPrijave? idPrijave}) {
+  final zavisnosti = context.read<ZavisnostiAplikacije>();
+  return BlocProvider(
+    create: (_) => FormularPrijaveBloc(
+      sacuvajPrijavu: zavisnosti.sacuvajPrijavu,
+      korisnik: zavisnosti.korisnik,
+      idPonude: idPonude,
+      idPrijave: idPrijave,
+    ),
+    child: FormularEkran(idPonude: idPonude, idPrijave: idPrijave),
+  );
+}
 
 GoRoute _mojaPrijava(GlobalKey<NavigatorState> korenski, String putanja, String parametar) => GoRoute(
   path: putanja,
@@ -21,12 +35,7 @@ GoRoute _mojaPrijava(GlobalKey<NavigatorState> korenski, String putanja, String 
     GoRoute(
       path: 'izmena',
       parentNavigatorKey: korenski,
-      builder: (context, state) {
-        // PRIVREMENO
-        final prijava = skladiste.prijava(IdPrijave(state.pathParameters[parametar]!));
-        if (prijava == null) return const NijePronadjenoEkran();
-        return FormularEkran(idPonude: prijava.idPonude, idPrijave: prijava.id);
-      },
+      builder: (context, state) => _formular(context, idPrijave: IdPrijave(state.pathParameters[parametar]!)),
     ),
   ],
 );
@@ -39,12 +48,11 @@ GoRoute _ponuda(GlobalKey<NavigatorState> korenski, String putanja) => GoRoute(
     GoRoute(
       path: 'prijava',
       parentNavigatorKey: korenski,
-      builder: (context, state) => FormularEkran(idPonude: IdPonude(state.pathParameters['id']!)),
+      builder: (context, state) => _formular(context, idPonude: IdPonude(state.pathParameters['id']!)),
     ),
     _mojaPrijava(korenski, 'moja/:idPrijave', 'idPrijave'),
   ],
 );
-
 
 GoRouter napraviRuter() {
   final korenski = GlobalKey<NavigatorState>();
@@ -65,6 +73,7 @@ GoRouter napraviRuter() {
               ),
             ],
           ),
+          // Tab 2: Profil i sve što se otvara iz njega
           StatefulShellBranch(
             routes: [
               GoRoute(

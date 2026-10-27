@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../tema/tema.dart';
 
-
 class EkranStanja extends StatelessWidget {
   const EkranStanja({super.key, required this.child});
 
@@ -56,12 +55,12 @@ class PrikazGreske extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Proverite vezu i pokusajte ponovo.',
+              'Proverite vezu i pokušajte ponovo.',
               textAlign: TextAlign.center,
               style: tekst.bodyMedium?.copyWith(color: Boje.sporedniTekst),
             ),
             const SizedBox(height: 20),
-            FilledButton(onPressed: onPonovo, child: const Text('Pokusaj ponovo')),
+            FilledButton(onPressed: onPonovo, child: const Text('Pokušaj ponovo')),
           ],
         ),
       ),

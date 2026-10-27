@@ -7,20 +7,24 @@ import 'package:use_cases/use_cases.dart';
 import 'pomocno.dart';
 import 'test_baza.dart';
 
-PonudeBloc napravi(TestBaza baza) =>
-    PonudeBloc(ucitajPregled: ucitajPregled(baza), promeniSacuvanu: PromeniSacuvanu(studenti: baza), korisnik: andrej);
+PonudeBloc napravi(TestBaza baza) => PonudeBloc(
+  ucitajPregled: ucitajPregled(baza),
+  promeniSacuvanu: PromeniSacuvanu(studenti: baza),
+  korisnik: andrej,
+);
 
 void main() {
-
   blocTest<PonudeBloc, PonudeStanje>(
     'učitava ponude',
     build: () => napravi(TestBaza(student: student, ponude: [ponuda()])),
     act: (bloc) => bloc.add(const PonudeZatrazene()),
     expect: () => [
       const PonudeUcitavanje(),
-      isA<PonudeUcitane>()
-          .having((s) => s.filtrirane, 'filtrirane', hasLength(1))
-          .having((s) => s.drzave, 'države za filter', ['Italija']),
+      isA<PonudeUcitane>().having((s) => s.filtrirane, 'filtrirane', hasLength(1)).having(
+        (s) => s.drzave,
+        'države za filter',
+        ['Italija'],
+      ),
     ],
   );
 
