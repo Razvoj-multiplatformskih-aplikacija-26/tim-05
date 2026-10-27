@@ -1,40 +1,49 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:use_cases/use_cases.dart';
+import 'package:blocs/blocs.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../podaci/lazni_podaci.dart';
 import '../tekst/format.dart';
 import '../tema/tema.dart';
 import '../widgeti/isprekidana_linija.dart';
 import '../widgeti/oznaka_drzave.dart';
 import '../widgeti/oznaka_stanja.dart';
 import '../widgeti/zaglavlje.dart';
+import '../widgeti/kontrole_laznih_podataka.dart';
+import '../widgeti/prikazi_stanja.dart';
 
-enum _Prikaz { prijave, sacuvano }
-
-class ProfilEkran extends StatefulWidget {
+class ProfilEkran extends StatelessWidget {
   const ProfilEkran({super.key});
 
   @override
-  State<ProfilEkran> createState() => _ProfilEkranState();
+  Widget build(BuildContext context) {
+    final bloc = context.read<ProfilBloc>();
+    return BlocBuilder<ProfilBloc, ProfilStanje>(
+      builder: (context, stanje) => switch (stanje) {
+        ProfilUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
+        ProfilGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const ProfilZatrazen()))),
+        final ProfilSaPodacima saPodacima => _Profil(stanje: saPodacima),
+      },
+    );
+  }
 }
 
-class _ProfilEkranState extends State<ProfilEkran> {
-  _Prikaz _prikaz = _Prikaz.prijave;
+class _Profil extends StatelessWidget {
+  const _Profil({required this.stanje});
 
-  Future<void> _otvori(String adresa) async {
-    await context.push(adresa);
-    if (mounted) setState(() {});
-  }
+  final ProfilSaPodacima stanje;
 
   @override
   Widget build(BuildContext context) {
     final tekst = Theme.of(context).textTheme;
-    final student = skladiste.student;
-    final moje = skladiste.mojePrijave..sort((a, b) => b.napravljena.compareTo(a.napravljena));
-    final sacuvane = [for (final id in skladiste.sacuvane) ?skladiste.ponuda(id)];
-    final aktivno = aktivnePrijave(student.id, skladiste.svePrijave).length;
-    final jePrijave = _prikaz == _Prikaz.prijave;
+    final podaci = stanje.podaci;
+    final student = podaci.student;
+    final moje = podaci.mojePrijave;
+    final sacuvane = podaci.sacuvanePonude;
+    final jePrijave = stanje.prikaz == PrikazProfila.prijave;
+    final bloc = context.read<ProfilBloc>();
 
     return Scaffold(
       body: CustomScrollView(
@@ -44,9 +53,16 @@ class _ProfilEkranState extends State<ProfilEkran> {
               dubinaPreklopa: 26,
               preklop: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _Statistika(student: student, aktivno: aktivno),
+                child: _Statistika(student: student, aktivno: podaci.brojAktivnih),
               ),
-              child: _Zaglavlje(student: student, naUredi: () => _otvori('/profil/uredi')),
+              child: _Zaglavlje(
+                student: student,
+                naUredi: () => context.push('/profil/uredi'),
+                meni: KontroleLaznihPodataka(
+                  naPrazanOdgovor: (baza) => baza.prazneListePrijava = 1,
+                  naPonovnoUcitavanje: () => bloc.add(const ProfilZatrazen()),
+                ),
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -56,10 +72,10 @@ class _ProfilEkranState extends State<ProfilEkran> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _Prekidac(
-                    izabran: _prikaz,
+                    izabran: stanje.prikaz,
                     brojPrijava: moje.length,
                     brojSacuvanih: sacuvane.length,
-                    onPromena: (prikaz) => setState(() => _prikaz = prikaz),
+                    onPromena: (prikaz) => bloc.add(PrikazProfilaPromenjen(prikaz)),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(2, 14, 2, 10),
@@ -76,25 +92,35 @@ class _ProfilEkranState extends State<ProfilEkran> {
           ),
           if (jePrijave)
             _lista(
-              prazno: 'Još nemate prijava. Izaberite ponudu na Početnoj.',
+              prazno: PrikazPraznog(
+                ikona: Icons.description_outlined,
+                poruka: 'Još nemate prijava. Izaberite ponudu na Početnoj.',
+                dugme: 'Pogledaj ponude',
+                onPritisak: () => context.go('/'),
+              ),
               kartice: [
                 for (final prijava in moje)
                   _KarticaPrijave(
                     key: ValueKey(prijava.id),
+                    podaci: podaci,
                     prijava: prijava,
-                    naDodir: () => _otvori('/profil/prijave/${prijava.id.vrednost}'),
+                    naDodir: () => context.push('/profil/prijave/${prijava.id.vrednost}'),
                   ),
               ],
             )
           else
             _lista(
-              prazno: 'Nemate sačuvanih ponuda. Sačuvajte ponudu dugmetom na njenom ekranu.',
+              prazno: const PrikazPraznog(
+                ikona: Icons.bookmark_border,
+                poruka: 'Nemate sačuvanih ponuda. Sačuvajte ponudu dugmetom na njenom ekranu.',
+              ),
               kartice: [
                 for (final ponuda in sacuvane)
                   _KarticaSacuvane(
                     key: ValueKey(ponuda.id),
+                    podaci: podaci,
                     ponuda: ponuda,
-                    naDodir: () => _otvori('/profil/sacuvane/${ponuda.id.vrednost}'),
+                    naDodir: () => context.push('/profil/sacuvane/${ponuda.id.vrednost}'),
                   ),
               ],
             ),
@@ -103,20 +129,8 @@ class _ProfilEkranState extends State<ProfilEkran> {
     );
   }
 
-  Widget _lista({required String prazno, required List<Widget> kartice}) {
-    if (kartice.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Text(
-            prazno,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Boje.sporedniTekst),
-          ),
-        ),
-      );
-    }
+  Widget _lista({required Widget prazno, required List<Widget> kartice}) {
+    if (kartice.isEmpty) return SliverFillRemaining(hasScrollBody: false, child: prazno);
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       sliver: SliverList.separated(
@@ -129,10 +143,11 @@ class _ProfilEkranState extends State<ProfilEkran> {
 }
 
 class _Zaglavlje extends StatelessWidget {
-  const _Zaglavlje({required this.student, required this.naUredi});
+  const _Zaglavlje({required this.student, required this.naUredi, required this.meni});
 
   final Student student;
   final VoidCallback naUredi;
+  final Widget meni;
 
   @override
   Widget build(BuildContext context) {
@@ -142,9 +157,15 @@ class _Zaglavlje extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 4),
-        Semantics(
-          header: true,
-          child: Text('Profil', style: tekst.headlineSmall?.copyWith(color: Boje.bela)),
+        Row(
+          children: [
+            Semantics(
+              header: true,
+              child: Text('Profil', style: tekst.headlineSmall?.copyWith(color: Boje.bela)),
+            ),
+            const Spacer(),
+            meni,
+          ],
         ),
         const SizedBox(height: 18),
         Row(
@@ -280,10 +301,10 @@ class _Prekidac extends StatelessWidget {
     required this.onPromena,
   });
 
-  final _Prikaz izabran;
+  final PrikazProfila izabran;
   final int brojPrijava;
   final int brojSacuvanih;
-  final ValueChanged<_Prikaz> onPromena;
+  final ValueChanged<PrikazProfila> onPromena;
 
   @override
   Widget build(BuildContext context) {
@@ -292,14 +313,14 @@ class _Prekidac extends StatelessWidget {
       decoration: BoxDecoration(color: Boje.prekidac, borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
-          _deo(context, _Prikaz.prijave, 'Moje prijave', brojPrijava),
-          _deo(context, _Prikaz.sacuvano, 'Sačuvano', brojSacuvanih),
+          _deo(context, PrikazProfila.prijave, 'Moje prijave', brojPrijava),
+          _deo(context, PrikazProfila.sacuvano, 'Sačuvano', brojSacuvanih),
         ],
       ),
     );
   }
 
-  Widget _deo(BuildContext context, _Prikaz prikaz, String naziv, int broj) {
+  Widget _deo(BuildContext context, PrikazProfila prikaz, String naziv, int broj) {
     final jeIzabran = prikaz == izabran;
     final stil = Theme.of(context).textTheme.labelLarge
         ?.copyWith(fontSize: 13.5, color: jeIzabran ? Boje.bordo : Boje.sporedniTekst);
@@ -338,8 +359,9 @@ class _Prekidac extends StatelessWidget {
 }
 
 class _KarticaPrijave extends StatelessWidget {
-  const _KarticaPrijave({super.key, required this.prijava, required this.naDodir});
+  const _KarticaPrijave({super.key, required this.podaci, required this.prijava, required this.naDodir});
 
+  final PregledPodataka podaci;
   final Prijava prijava;
   final VoidCallback naDodir;
 
@@ -355,9 +377,9 @@ class _KarticaPrijave extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ponuda = skladiste.ponuda(prijava.idPonude);
+    final ponuda = podaci.ponuda(prijava.idPonude);
     if (ponuda == null) return const SizedBox.shrink();
-    final univerzitet = skladiste.univerzitet(ponuda.idUniverziteta);
+    final univerzitet = podaci.univerzitet(ponuda.idUniverziteta);
     final tekst = Theme.of(context).textTheme;
     final sporedni = tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12);
     final (opis, datum) = _opis();
@@ -421,17 +443,18 @@ class _KarticaPrijave extends StatelessWidget {
 }
 
 class _KarticaSacuvane extends StatelessWidget {
-  const _KarticaSacuvane({super.key, required this.ponuda, required this.naDodir});
+  const _KarticaSacuvane({super.key, required this.podaci, required this.ponuda, required this.naDodir});
 
+  final PregledPodataka podaci;
   final Ponuda ponuda;
   final VoidCallback naDodir;
 
   @override
   Widget build(BuildContext context) {
-    final univerzitet = skladiste.univerzitet(ponuda.idUniverziteta);
+    final univerzitet = podaci.univerzitet(ponuda.idUniverziteta);
     final tekst = Theme.of(context).textTheme;
     final sporedni = tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12);
-    final slobodno = preostalaMesta(ponuda, skladiste.svePrijave);
+    final slobodno = podaci.slobodnaMesta(ponuda);
 
     return Card(
       child: InkWell(
