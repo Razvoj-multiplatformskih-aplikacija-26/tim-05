@@ -6,3 +6,6 @@ export 'src/ports/student_repository.dart';
 export 'src/pregled_podataka.dart';
 export 'src/sat.dart';
 export 'src/ucitaj_pregled.dart';
+export 'src/ucitaj_pregled_koordinatora.dart';
+export 'src/pregled_koordinatora.dart';
+export 'src/akcije_koordinatora.dart';
