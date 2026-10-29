@@ -1,0 +1,34 @@
+name: backoffice
+description: Backoffice za koordinatore. Pregled, upoređivanje i obrada prijava na ponude univerziteta.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  domain:
+    path: ../../packages/domain
+  go_router: ^18.0.2
+  use_cases:
+    path: ../../packages/use_cases
+  blocs:
+    path: ../../packages/blocs
+  flutter_bloc: 9.1.1
+  ui:
+    path: ../../packages/ui
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
