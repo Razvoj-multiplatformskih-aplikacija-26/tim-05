@@ -1,0 +1,37 @@
+name: ui
+description: Tema, fontovi, tekstovi na srpskom i zajednički widgeti za obe Flutter aplikacije (mobilnu i backoffice).
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dependencies:
+  domain:
+    path: ../domain
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  fonts:
+    - family: Outfit
+      fonts:
+        - asset: assets/fonts/outfit/Outfit-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/outfit/Outfit-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/outfit/Outfit-Bold.ttf
+          weight: 700
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/manrope/Manrope-Regular.ttf
+        - asset: assets/fonts/manrope/Manrope-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/manrope/Manrope-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/manrope/Manrope-Bold.ttf
+          weight: 700

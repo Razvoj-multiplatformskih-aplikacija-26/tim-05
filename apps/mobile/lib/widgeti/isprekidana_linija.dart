@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:ui/ui.dart';
 
-import '../tema/tema.dart';
 
 class IsprekidanaLinija extends StatelessWidget {
   const IsprekidanaLinija({super.key}) : uspravna = false, duzina = double.infinity;

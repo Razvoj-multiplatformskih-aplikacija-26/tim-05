@@ -4,14 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:use_cases/use_cases.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blocs/blocs.dart';
+import 'package:ui/ui.dart';
 
-import '../tekst/format.dart';
-import '../tekst/poruke_gresaka.dart';
-import '../tema/tema.dart';
+
 import '../widgeti/nije_pronadjeno.dart';
 import '../widgeti/oznaka_drzave.dart';
-import '../widgeti/oznaka_stanja.dart';
-import '../widgeti/prikazi_stanja.dart';
 import '../widgeti/zaglavlje.dart';
 
 class MojaPrijavaEkran extends StatelessWidget {

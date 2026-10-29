@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ui/ui.dart';
 
-import '../tema/tema.dart';
 
 class BordoZaglavlje extends StatelessWidget {
   const BordoZaglavlje({super.key, required this.child, this.preklop, this.dubinaPreklopa = 0, this.razmakDole = 20});

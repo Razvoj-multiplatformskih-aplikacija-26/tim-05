@@ -4,15 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:use_cases/use_cases.dart';
 import 'package:blocs/blocs.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ui/ui.dart';
 
-import '../tekst/format.dart';
-import '../tema/tema.dart';
+
 import '../widgeti/isprekidana_linija.dart';
 import '../widgeti/oznaka_drzave.dart';
-import '../widgeti/oznaka_stanja.dart';
 import '../widgeti/zaglavlje.dart';
 import '../widgeti/kontrole_laznih_podataka.dart';
-import '../widgeti/prikazi_stanja.dart';
 
 class ProfilEkran extends StatelessWidget {
   const ProfilEkran({super.key});

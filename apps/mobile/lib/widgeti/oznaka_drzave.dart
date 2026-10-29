@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ui/ui.dart';
 
-import '../tema/tema.dart';
 
 class OznakaDrzave extends StatelessWidget {
   const OznakaDrzave({super.key, required this.oznaka, this.velicina = 44, this.naBordo = false});

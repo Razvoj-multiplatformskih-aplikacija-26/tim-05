@@ -3,9 +3,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blocs/blocs.dart';
+import 'package:ui/ui.dart';
 
 import 'router.dart';
-import 'tema/tema.dart';
 import 'zavisnosti.dart';
 
 class ErasmusAplikacija extends StatefulWidget {

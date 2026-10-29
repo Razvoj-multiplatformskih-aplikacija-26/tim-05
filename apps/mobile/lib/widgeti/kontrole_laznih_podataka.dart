@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ui/ui.dart';
 
 import '../podaci/lazna_baza.dart';
-import '../tema/tema.dart';
 import '../zavisnosti.dart';
 
 enum _Akcija { greska, prazno, ucitaj }
@@ -28,7 +28,7 @@ class KontroleLaznihPodataka extends StatelessWidget {
         switch (akcija) {
           case _Akcija.greska:
             baza.neuspesniZahtevi = 1;
-            _javi(context, 'Sledeći zahtev nece uspeti.');
+            _javi(context, 'Sledeći zahtev neće uspeti.');
           case _Akcija.prazno:
             naPrazanOdgovor(baza);
             _javi(context, 'Sledeći odgovor biće prazan.');
