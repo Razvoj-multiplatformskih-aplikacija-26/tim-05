@@ -31,7 +31,7 @@ abstract final class AppTema {
     return ThemeData(
       colorScheme: shema,
       textTheme: tekst,
-      fontFamily: Tipografija.fontTeksta,
+      fontFamily: 'packages/${Tipografija.paket}/${Tipografija.fontTeksta}',
       scaffoldBackgroundColor: Boje.pozadina,
       appBarTheme: AppBarTheme(
         backgroundColor: Boje.bordo,

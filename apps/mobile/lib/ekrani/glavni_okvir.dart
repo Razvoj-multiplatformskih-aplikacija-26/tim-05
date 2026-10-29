@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ui/ui.dart';
 
-import '../tema/tema.dart';
 
 class GlavniOkvir extends StatelessWidget {
   const GlavniOkvir({super.key, required this.okvir});

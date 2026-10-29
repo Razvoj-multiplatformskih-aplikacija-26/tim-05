@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/widgeti/prikazi_stanja.dart';
 import 'package:mobile/zavisnosti.dart';
+import 'package:ui/ui.dart';
 
 import 'pomocno.dart';
 

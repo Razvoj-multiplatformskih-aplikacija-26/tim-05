@@ -1,9 +1,7 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:use_cases/use_cases.dart';
-
-import '../tekst/format.dart';
-import '../tema/tema.dart';
+import 'package:ui/ui.dart';
 
 class ListaUslova extends StatelessWidget {
   const ListaUslova({super.key, required this.ponuda, required this.student, required this.uslovi});

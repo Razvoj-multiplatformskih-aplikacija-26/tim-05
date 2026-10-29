@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:use_cases/use_cases.dart';
+import 'package:ui/ui.dart';
 
-import '../tekst/format.dart';
-import '../tekst/poruke_gresaka.dart';
-import '../tema/tema.dart';
+
 import '../widgeti/isprekidana_linija.dart';
 import '../widgeti/lista_uslova.dart';
 import '../widgeti/nije_pronadjeno.dart';
-import '../widgeti/prikazi_stanja.dart';
 import '../widgeti/zaglavlje.dart';
 
 class PonudaEkran extends StatelessWidget {
