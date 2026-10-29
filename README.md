@@ -25,7 +25,7 @@ Sistem pokriva samo prijavu na razmenu, a ne ceo Erasmus proces.
 | Deo | Korisnici | Tehnologija | Platforme |
 | --- | --- | --- | --- |
 | Mobilna aplikacija | studenti | Flutter | Android, iOS |
-| Backoffice | koordinatori | Flutter | Windows, veb |
+| Backoffice | koordinatori | Flutter | macOS, Windows, veb |
 | Javni veb | svi posetioci | Jaspr | pregledač |
 | Server | ostali delovi sistema | Relic, PostgreSQL | Linux, Windows |
 | Domenski paket | svi delovi sistema | Dart | sve |
