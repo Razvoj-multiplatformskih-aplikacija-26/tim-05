@@ -7,7 +7,6 @@ import 'package:use_cases/use_cases.dart';
 part 'koordinator_dogadjaj.dart';
 part 'koordinator_stanje.dart';
 
-
 final class KoordinatorBloc extends Bloc<KoordinatorDogadjaj, KoordinatorStanje> {
   KoordinatorBloc({
     required this.ucitajPregled,
@@ -55,11 +54,8 @@ final class KoordinatorBloc extends Bloc<KoordinatorDogadjaj, KoordinatorStanje>
       (dogadjaj, emit) => _izvrsi(emit, dogadjaj.id, () => staviNaListuCekanja(ko: korisnik, id: dogadjaj.id)),
     );
     on<OdbijanjeZatrazeno>(
-      (dogadjaj, emit) => _izvrsi(
-        emit,
-        dogadjaj.id,
-        () => odbijPrijavu(ko: korisnik, id: dogadjaj.id, razlog: dogadjaj.razlog),
-      ),
+      (dogadjaj, emit) =>
+          _izvrsi(emit, dogadjaj.id, () => odbijPrijavu(ko: korisnik, id: dogadjaj.id, razlog: dogadjaj.razlog)),
     );
     on<ObavestenjeKoordinatoraProcitano>((dogadjaj, emit) {
       final trenutno = state;
@@ -142,13 +138,7 @@ final class KoordinatorBloc extends Bloc<KoordinatorDogadjaj, KoordinatorStanje>
             .jeUspeh)
           AkcijaKoordinatora.listaCekanja,
         if (domen
-            .odbijPrijavu(
-              prijava,
-              ko: korisnik,
-              ponuda: podaci.ponuda(prijava.idPonude),
-              razlog: '',
-              sada: podaci.sada,
-            )
+            .odbijPrijavu(prijava, ko: korisnik, ponuda: podaci.ponuda(prijava.idPonude), razlog: '', sada: podaci.sada)
             .jeUspeh)
           AkcijaKoordinatora.odbij,
       },

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:ui/ui.dart';
 import 'package:use_cases/use_cases.dart';
 
-
 class DetaljPrijave extends StatelessWidget {
   const DetaljPrijave({
     super.key,
@@ -79,7 +78,10 @@ class DetaljPrijave extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
-                    Align(alignment: Alignment.centerLeft, child: OznakaStanja(stanje: prijava.stanje)),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OznakaStanja(stanje: prijava.stanje),
+                    ),
                     const SizedBox(height: 8),
                     Text(opisStanja(prijava.stanje), style: sporedno),
                     const SizedBox(height: 20),

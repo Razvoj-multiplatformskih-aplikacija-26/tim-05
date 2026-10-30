@@ -2,7 +2,6 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:ui/ui.dart';
 
-
 import 'isprekidana_linija.dart';
 import 'oznaka_drzave.dart';
 

@@ -34,7 +34,7 @@ final class UcitajPregledKoordinatora {
       for (final ponuda in svePonude)
         if (ponuda.idUniverziteta == univerzitet.id) ponuda,
     ];
-    
+
     final idPonuda = {for (final ponuda in mojePonude) ponuda.id};
     final prijaveNaPonude = [
       for (final prijava in svePrijave)

@@ -4,7 +4,6 @@ import 'package:use_cases/use_cases.dart';
 import 'podaci/lazna_baza.dart';
 import 'podaci/lazni_podaci.dart';
 
-
 final class ZavisnostiBackoffice {
   ZavisnostiBackoffice({
     required this.korisnik,

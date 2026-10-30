@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui/ui.dart';
 
-
 import '../widgeti/kartica_ponude.dart';
 import '../widgeti/kontrole_laznih_podataka.dart';
 import '../widgeti/logo.dart';

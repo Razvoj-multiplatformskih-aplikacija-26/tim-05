@@ -16,7 +16,6 @@ final class PrihvatiPrijavu {
   final Sat sat;
 
   Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) async {
-
     final sve = await prijave.svePrijave();
     final prijava = _nadji(sve, id);
 
@@ -42,7 +41,6 @@ final class StaviNaListuCekanja {
   final Sat sat;
 
   Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) async {
-
     final prijava = _nadji(await prijave.svePrijave(), id);
 
     if (prijava == null) return const Neuspeh(NijePronadjeno());
@@ -67,7 +65,6 @@ final class OdbijPrijavu {
   final Sat sat;
 
   Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id, required String razlog}) async {
-
     final prijava = _nadji(await prijave.svePrijave(), id);
 
     if (prijava == null) return const Neuspeh(NijePronadjeno());
@@ -79,7 +76,7 @@ final class OdbijPrijavu {
     final rezultat = odbijPrijavu(prijava, ko: ko, ponuda: ponuda, razlog: razlog, sada: sat.sada());
 
     if (rezultat case Uspeh(:final vrednost)) await prijave.sacuvaj([vrednost]);
-    
+
     return rezultat;
   }
 }

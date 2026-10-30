@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
-import 'package:ui/ui.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:blocs/blocs.dart';
+import 'package:flutter/foundation.dart';
 
+import 'app.dart';
 import 'zavisnosti.dart';
 
-// PRIVREMENO
 void main() {
   usePathUrlStrategy();
-  final zavisnosti = ZavisnostiBackoffice.lazne();
-  runApp(
-    MaterialApp(
-      theme: AppTema.svetla(),
-      home: Scaffold(body: Center(child: Text('Backoffice: ${zavisnosti.korisnik.korisnickoIme}'))),
-    ),
-  );
+  if (kDebugMode) Bloc.observer = KonzolniBlocObserver(debugPrint);
+  runApp(BackofficeAplikacija(zavisnosti: ZavisnostiBackoffice.lazne()));
 }
