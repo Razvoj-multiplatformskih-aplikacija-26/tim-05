@@ -7,64 +7,237 @@ import 'package:use_cases/use_cases.dart';
 import 'pomocno.dart';
 import 'test_baza.dart';
 
-FormularPrijaveBloc napravi(TestBaza baza, {IdPonude? idPonude, IdPrijave? idPrijave}) => FormularPrijaveBloc(
-  sacuvajPrijavu: SacuvajPrijavu(ponude: baza, prijave: baza, studenti: baza, sat: sat),
-  korisnik: andrej,
-  idPonude: idPonude,
-  idPrijave: idPrijave,
+const koordinator = Korisnik(
+  id: IdKorisnika('k-1'),
+  korisnickoIme: 'koordinator.milano',
+  uloga: Uloga.koordinator,
+  idUniverziteta: IdUniverziteta('u-polimi'),
 );
 
+final poslata = Poslata(kada: DateTime(2026, 10, 21));
+final prihvacena = Prihvacena(odlucio: koordinator.id, kada: DateTime(2026, 10, 22));
+
+KoordinatorBloc napravi(TestBaza baza) => KoordinatorBloc(
+  ucitajPregled: UcitajPregledKoordinatora(ponude: baza, prijave: baza, studenti: baza, sat: sat),
+  prihvatiPrijavu: PrihvatiPrijavu(ponude: baza, prijave: baza, sat: sat),
+  staviNaListuCekanja: StaviNaListuCekanja(ponude: baza, prijave: baza, sat: sat),
+  odbijPrijavu: OdbijPrijavu(ponude: baza, prijave: baza, sat: sat),
+  korisnik: koordinator,
+);
+
+TestBaza dvePrijave() => TestBaza(
+  student: student,
+  ponude: [ponuda(), ponuda(id: 'po-2')],
+  prijave: [
+    prijava(stanje: poslata),
+    prijava(id: 'p-2', idPonude: 'po-2', stanje: poslata),
+  ],
+);
+
+Future<void> sacekaj() => Future<void>.delayed(Duration.zero);
+
 void main() {
-  blocTest<FormularPrijaveBloc, FormularPrijaveStanje>(
-    'čuvanje nove prijave: u toku, pa sačuvana u pripremi',
-    build: () => napravi(
-      TestBaza(student: student, ponude: [ponuda()]),
-      idPonude: const IdPonude('po-1'),
-    ),
-    act: (bloc) => bloc.add(CuvanjeZatrazeno(pismo: pismo)),
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'učitava prijave i za svaku računa dozvoljene akcije iz domena',
+    build: () => napravi(dvePrijave()),
+    act: (bloc) => bloc.add(const PrijaveZatrazene()),
     expect: () => [
-      const FormularUToku(posalji: false),
-      isA<FormularSacuvan>()
-          .having((s) => s.poslata, 'poslata', isFalse)
-          .having((s) => s.prijava.stanje, 'stanje', isA<UPripremi>()),
+      const KoordinatorUcitavanje(),
+      isA<KoordinatorUcitano>()
+          .having((s) => s.prijave, 'prijave', hasLength(2))
+          .having((s) => s.kursor, 'kursor', 0)
+          .having((s) => s.izabrana, 'izabrana', isNull)
+          .having(
+            (s) => s.akcijeZa(s.prijave.first),
+            'akcije',
+            {AkcijaKoordinatora.prihvati, AkcijaKoordinatora.listaCekanja, AkcijaKoordinatora.odbij},
+          ),
     ],
   );
 
-  blocTest<FormularPrijaveBloc, FormularPrijaveStanje>(
-    'slanje uz premali prosek vraća grešku iz domena (P2)',
-    build: () => napravi(
-      TestBaza(student: student, ponude: [ponuda(minimalniProsek: 9.0)]),
-      idPonude: const IdPonude('po-1'),
-    ),
-    act: (bloc) => bloc.add(SlanjeZatrazeno(pismo: pismo)),
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'prijava u pripremi se ne vidi, pa je ekran prazan',
+    build: () => napravi(TestBaza(student: student, ponude: [ponuda()], prijave: [prijava()])),
+    act: (bloc) => bloc.add(const PrijaveZatrazene()),
+    expect: () => [const KoordinatorUcitavanje(), isA<KoordinatorPrazno>()],
+  );
+
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'greška porta daje stanje greške',
+    build: () => napravi(dvePrijave()..greskaSledecegZahteva = true),
+    act: (bloc) => bloc.add(const PrijaveZatrazene()),
+    expect: () => [const KoordinatorUcitavanje(), isA<KoordinatorGreska>()],
+  );
+
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'kursor ostaje u granicama liste, a Enter otvara prijavu pod kursorom',
+    build: () => napravi(dvePrijave()),
+    act: (bloc) async {
+      bloc.add(const PrijaveZatrazene());
+      await sacekaj();
+      bloc
+        ..add(const KursorPomeren(5))
+        ..add(const KursorAktiviran());
+    },
+    skip: 2,
     expect: () => [
-      const FormularUToku(posalji: true),
-      isA<FormularOdbijen>().having((s) => s.greska, 'greška', isA<NedovoljanProsek>()),
+      isA<KoordinatorUcitano>().having((s) => s.kursor, 'kursor', 1),
+      isA<KoordinatorUcitano>().having((s) => s.izabrana, 'izabrana', const IdPrijave('p-2')),
     ],
   );
 
-  blocTest<FormularPrijaveBloc, FormularPrijaveStanje>(
-    'slanje postojeće prijave je menja u poslatu',
-    build: () => napravi(
-      TestBaza(student: student, ponude: [ponuda()], prijave: [prijava()]),
-      idPrijave: const IdPrijave('p-1'),
-    ),
-    act: (bloc) => bloc.add(SlanjeZatrazeno(pismo: pismo)),
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'izbor iz adrese pomera kursor, a nepoznat ID se zanemaruje',
+    build: () => napravi(dvePrijave()),
+    act: (bloc) async {
+      bloc.add(const PrijaveZatrazene());
+      await sacekaj();
+      bloc
+        ..add(const PrijavaIzabrana(IdPrijave('p-2')))
+        ..add(const PrijavaIzabrana(IdPrijave('nema')))
+        ..add(const PrijavaIzabrana(null));
+    },
+    skip: 2,
     expect: () => [
-      const FormularUToku(posalji: true),
-      isA<FormularSacuvan>()
-          .having((s) => s.poslata, 'poslata', isTrue)
-          .having((s) => s.prijava.stanje, 'stanje', isA<Poslata>()),
+      isA<KoordinatorUcitano>()
+          .having((s) => s.izabrana, 'izabrana', const IdPrijave('p-2'))
+          .having((s) => s.kursor, 'kursor', 1),
+      isA<KoordinatorUcitano>().having((s) => s.izabrana, 'izabrana', isNull).having((s) => s.kursor, 'kursor', 1),
     ],
   );
 
-  blocTest<FormularPrijaveBloc, FormularPrijaveStanje>(
-    'greška porta daje stanje neuspeha',
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'prihvatanje: akcija traje, pa novi podaci uz poruku, a izbor ostaje',
+    build: () => napravi(dvePrijave()),
+    act: (bloc) async {
+      bloc.add(const PrijaveZatrazene());
+      await sacekaj();
+      bloc.add(const PrijavaIzabrana(IdPrijave('p-1')));
+      await sacekaj();
+      bloc.add(const PrihvatanjeZatrazeno(IdPrijave('p-1')));
+    },
+    skip: 3,
+    expect: () => [
+      isA<KoordinatorUcitano>()
+          .having((s) => s.uToku, 'u toku', const IdPrijave('p-1'))
+          .having((s) => s.dozvoljeno(AkcijaKoordinatora.prihvati), 'dozvoljeno dok traje', isFalse),
+      isA<KoordinatorUcitano>()
+          .having((s) => s.uToku, 'u toku', isNull)
+          .having((s) => s.izabrana, 'izabrana', const IdPrijave('p-1'))
+          .having((s) => s.izabranaPrijava?.stanje, 'stanje', isA<Prihvacena>())
+          .having((s) => s.obavestenje, 'obaveštenje', isA<OdlukaSacuvana>())
+          // Iz prihvaćene prijave domen ne dozvoljava nijednu od tri odluke.
+          .having((s) => s.akcijeZa(s.izabranaPrijava!), 'akcije', isEmpty),
+    ],
+  );
+
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'kad su mesta popunjena, dugme se ne nudi, a zahtev vraća grešku domena',
     build: () => napravi(
-      TestBaza(student: student, ponude: [ponuda()])..greskaSledecegZahteva = true,
-      idPonude: const IdPonude('po-1'),
+      TestBaza(
+        student: student,
+        ponude: [ponuda()],
+        prijave: [
+          prijava(id: 'p-8', stanje: prihvacena),
+          prijava(id: 'p-9', stanje: prihvacena),
+          prijava(stanje: poslata),
+        ],
+      ),
     ),
-    act: (bloc) => bloc.add(CuvanjeZatrazeno(pismo: pismo)),
-    expect: () => [const FormularUToku(posalji: false), isA<FormularNeuspeo>()],
+    act: (bloc) async {
+      bloc.add(const PrijaveZatrazene());
+      await sacekaj();
+      bloc.add(const PrihvatanjeZatrazeno(IdPrijave('p-1')));
+    },
+    skip: 1,
+    expect: () => [
+      isA<KoordinatorUcitano>().having(
+        (s) => s.akcijeZa(s.podaci.prijava(const IdPrijave('p-1'))!),
+        'akcije',
+        {AkcijaKoordinatora.listaCekanja, AkcijaKoordinatora.odbij},
+      ),
+      isA<KoordinatorUcitano>().having((s) => s.uToku, 'u toku', const IdPrijave('p-1')),
+      isA<KoordinatorUcitano>()
+          .having((s) => s.uToku, 'u toku', isNull)
+          .having((s) => s.obavestenje, 'obaveštenje', const OdlukaOdbijena(NemaSlobodnihMesta())),
+    ],
+  );
+
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'osvežavanje: stanje kaže da traje, pa poruka, a izbor ostaje',
+    build: () => napravi(dvePrijave()),
+    act: (bloc) async {
+      bloc.add(const PrijaveZatrazene());
+      await sacekaj();
+      bloc.add(const PrijavaIzabrana(IdPrijave('p-2')));
+      await sacekaj();
+      bloc.add(const PrijaveOsvezene());
+    },
+    skip: 3,
+    expect: () => [
+      isA<KoordinatorUcitano>()
+          .having((s) => s.osvezava, 'osvežava', isTrue)
+          .having((s) => s.dozvoljeno(AkcijaKoordinatora.prihvati), 'dozvoljeno dok traje', isFalse),
+      isA<KoordinatorUcitano>()
+          .having((s) => s.osvezava, 'osvežava', isFalse)
+          .having((s) => s.izabrana, 'izabrana', const IdPrijave('p-2'))
+          .having((s) => s.obavestenje, 'obaveštenje', const PodaciOsvezeni()),
+    ],
+  );
+
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'filteri sužavaju prikaz, a izbor koji se više ne vidi se briše',
+    build: () => napravi(
+      TestBaza(
+        student: student,
+        ponude: [ponuda(), ponuda(id: 'po-2')],
+        prijave: [
+          prijava(stanje: poslata),
+          prijava(id: 'p-2', idPonude: 'po-2', stanje: prihvacena),
+        ],
+      ),
+    ),
+    act: (bloc) async {
+      bloc.add(const PrijaveZatrazene());
+      await sacekaj();
+      bloc
+        ..add(const PrijavaIzabrana(IdPrijave('p-1')))
+        ..add(const FilteriPrijavaPromenjeni(FilteriPrijava(stanje: FilterStanja.prihvacene)))
+        ..add(const FilteriPrijavaPromenjeni(FilteriPrijava(ponuda: IdPonude('po-1'))));
+    },
+    skip: 3,
+    expect: () => [
+      isA<KoordinatorUcitano>()
+          .having((s) => s.prijave.map((p) => p.id), 'prikazane', [const IdPrijave('p-2')])
+          .having((s) => s.izabrana, 'izabrana', isNull)
+          .having((s) => s.kursor, 'kursor', 0)
+          .having((s) => s.broj(FilterStanja.poslate), 'broj poslatih', 1),
+      isA<KoordinatorUcitano>()
+          .having((s) => s.prijave.map((p) => p.id), 'prikazane', [const IdPrijave('p-1')])
+          .having((s) => s.podaci.prijave, 'sve prijave', hasLength(2)),
+    ],
+  );
+
+  final baza = dvePrijave();
+  blocTest<KoordinatorBloc, KoordinatorStanje>(
+    'greška porta tokom odbijanja ostavlja podatke i daje poruku, koja se zatim briše',
+    build: () => napravi(baza),
+    act: (bloc) async {
+      bloc.add(const PrijaveZatrazene());
+      await sacekaj();
+      baza.greskaSledecegZahteva = true;
+      bloc.add(const OdbijanjeZatrazeno(IdPrijave('p-1'), razlog: 'Mesta su popunjena.'));
+      await sacekaj();
+      bloc.add(const ObavestenjeKoordinatoraProcitano());
+    },
+    skip: 2,
+    expect: () => [
+      isA<KoordinatorUcitano>().having((s) => s.uToku, 'u toku', const IdPrijave('p-1')),
+      isA<KoordinatorUcitano>()
+          .having((s) => s.uToku, 'u toku', isNull)
+          .having((s) => s.prijave.first.stanje, 'stanje', isA<Poslata>())
+          .having((s) => s.obavestenje, 'obaveštenje', isA<OdlukaNeuspela>()),
+      isA<KoordinatorUcitano>().having((s) => s.obavestenje, 'obaveštenje', isNull),
+    ],
   );
 }

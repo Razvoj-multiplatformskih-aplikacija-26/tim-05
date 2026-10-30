@@ -30,9 +30,6 @@ class PonudaEkran extends StatelessWidget {
     if (poruka == null) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(poruka)));
     context.read<PonudeBloc>().add(const ObavestenjePonudaProcitano());
-    if (obavestenje is PonudaSacuvana || obavestenje is PonudaUklonjena) {
-      context.read<ProfilBloc>().add(const ProfilOsvezen());
-    }
   }
 
   @override

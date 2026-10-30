@@ -7,7 +7,6 @@ import 'package:ui/ui.dart';
 
 import '../widgeti/kartica_ponude.dart';
 import '../widgeti/kontrole_laznih_podataka.dart';
-import '../widgeti/logo.dart';
 import '../widgeti/zaglavlje.dart';
 
 class PocetnaEkran extends StatelessWidget {

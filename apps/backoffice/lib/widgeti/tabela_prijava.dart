@@ -4,10 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:ui/ui.dart';
 import 'package:use_cases/use_cases.dart';
 
+
 class TabelaPrijava extends StatefulWidget {
   const TabelaPrijava({
     super.key,
     required this.podaci,
+    required this.prijave,
     required this.kursor,
     required this.izabrana,
     required this.focusNode,
@@ -21,6 +23,8 @@ class TabelaPrijava extends StatefulWidget {
   static const visinaReda = 60.0;
 
   final PregledKoordinatora podaci;
+
+  final List<Prijava> prijave;
   final int kursor;
   final IdPrijave? izabrana;
 
@@ -115,7 +119,7 @@ class _TabelaPrijavaState extends State<TabelaPrijava> {
   @override
   Widget build(BuildContext context) {
     final podaci = widget.podaci;
-    final prijave = podaci.prijave;
+    final prijave = widget.prijave;
     return Focus(
       focusNode: widget.focusNode,
       autofocus: true,
@@ -128,10 +132,10 @@ class _TabelaPrijavaState extends State<TabelaPrijava> {
             const _Zaglavlje(),
             const Divider(height: 1),
             Expanded(
-              // Samo ovaj deo se ponovo crta kad tabela dobije ili izgubi fokus.
               child: ListenableBuilder(
                 listenable: widget.focusNode,
                 builder: (context, _) {
+                  if (prijave.isEmpty) return const _NemaPrijava();
                   final kursor = widget.focusNode.hasFocus ? widget.kursor : null;
                   return ListView.builder(
                     controller: _skrol,
@@ -156,6 +160,23 @@ class _TabelaPrijavaState extends State<TabelaPrijava> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NemaPrijava extends StatelessWidget {
+  const _NemaPrijava();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Semantics(
+        liveRegion: true,
+        child: Text(
+          'Nijedna prijava ne odgovara izabranim filterima.',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Boje.sporedniTekst),
         ),
       ),
     );
@@ -220,7 +241,6 @@ class _Zaglavlje extends StatelessWidget {
     return SizedBox(
       height: 40,
       child: Padding(
-        // Isto uvlačenje kao red (8 spolja + 12 u kolonama), da se kolone poklope.
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: _Kolone(
           student: naslov('Student'),
@@ -234,6 +254,7 @@ class _Zaglavlje extends StatelessWidget {
     );
   }
 }
+
 
 class _RedPrijave extends StatelessWidget {
   const _RedPrijave({
@@ -288,7 +309,6 @@ class _RedPrijave extends StatelessWidget {
             child: InkWell(
               onTap: onTap,
               onSecondaryTapUp: (detalji) => onKontekstMeni(detalji.globalPosition),
-              // Fokus drži tabela, ne pojedinačni red; inače bi Tab prolazio kroz svaki red.
               canRequestFocus: false,
               hoverColor: Boje.bordo.withValues(alpha: 0.05),
               child: _Kolone(
@@ -306,7 +326,10 @@ class _RedPrijave extends StatelessWidget {
                   ],
                 ),
                 ponuda: Text(ponuda.oblast, style: tekst.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-                prosek: _Uslov(tekst: student == null ? '—' : formatProsek(student.prosek), ispunjen: imaProsek),
+                prosek: _Uslov(
+                  tekst: student == null ? '—' : formatProsek(student.prosek),
+                  ispunjen: imaProsek,
+                ),
                 jezik: _Uslov(tekst: nivo, ispunjen: imaJezik),
                 datum: Text(formatKratakDatum(prijava.napravljena), style: tekst.bodyMedium),
                 stanje: OznakaStanja(stanje: prijava.stanje),
@@ -318,6 +341,7 @@ class _RedPrijave extends StatelessWidget {
     );
   }
 }
+
 
 class _Uslov extends StatelessWidget {
   const _Uslov({required this.tekst, required this.ispunjen});

@@ -12,6 +12,12 @@ final class PrijaveOsvezene extends KoordinatorDogadjaj {
   const PrijaveOsvezene();
 }
 
+final class FilteriPrijavaPromenjeni extends KoordinatorDogadjaj {
+  const FilteriPrijavaPromenjeni(this.filteri);
+
+  final FilteriPrijava filteri;
+}
+
 final class PrijavaIzabrana extends KoordinatorDogadjaj {
   const PrijavaIzabrana(this.id);
 
