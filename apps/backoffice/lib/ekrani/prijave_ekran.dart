@@ -13,8 +13,10 @@ import '../widgeti/dijalog_odbijanja.dart';
 import '../widgeti/lista_prijava.dart';
 import '../widgeti/pregled_precica.dart';
 import '../widgeti/tabela_prijava.dart';
+import '../widgeti/traka_filtera.dart';
 import '../widgeti/traka_popunjenosti.dart';
 import '../zavisnosti.dart';
+
 
 class PrijaveEkran extends StatefulWidget {
   const PrijaveEkran({super.key, this.izabrana});
@@ -31,9 +33,11 @@ class PrijaveEkran extends StatefulWidget {
 }
 
 class _PrijaveEkranState extends State<PrijaveEkran> {
-  final _fokusTabele = FocusNode(debugLabel: 'tabela prijava');
+  final _fokusPrijava = FocusNode(debugLabel: 'prijave');
 
   KoordinatorBloc get _bloc => context.read<KoordinatorBloc>();
+
+  bool get _usko => MediaQuery.sizeOf(context).width < PrijaveEkran.sirokoOd;
 
   KoordinatorUcitano? get _ucitano => switch (_bloc.state) {
     final KoordinatorUcitano stanje => stanje,
@@ -54,7 +58,7 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
 
   @override
   void dispose() {
-    _fokusTabele.dispose();
+    _fokusPrijava.dispose();
     super.dispose();
   }
 
@@ -64,6 +68,55 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
   }
 
   void _izaberi(Prijava? prijava) => _bloc.add(PrijavaIzabrana(prijava?.id));
+
+  
+  void _otvori(Prijava prijava) {
+    _izaberi(prijava);
+    if (_usko) _prikaziDonjiList(prijava);
+  }
+
+  void _otvoriPodKursorom() {
+    final prijava = _ucitano?.prijavaPodKursorom;
+    if (prijava != null) _otvori(prijava);
+  }
+
+  void _filtriraj(FilteriPrijava filteri) => _bloc.add(FilteriPrijavaPromenjeni(filteri));
+
+  Future<void> _prikaziDonjiList(Prijava prijava) {
+    final stanje = _ucitano;
+    if (stanje == null) return Future.value();
+    final akcije = stanje.akcijeZa(prijava);
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (kontekstLista) {
+        void zatvoriPa(void Function() akcija) {
+          Navigator.pop(kontekstLista);
+          akcija();
+        }
+
+        return SizedBox(
+          height: MediaQuery.sizeOf(kontekstLista).height * 0.75,
+          child: FocusScope(
+            autofocus: true,
+            child: DetaljPrijave(
+              prijava: prijava,
+              podaci: stanje.podaci,
+              onZatvori: () => Navigator.pop(kontekstLista),
+              onPrihvati: akcije.contains(AkcijaKoordinatora.prihvati)
+                  ? () => zatvoriPa(() => _prihvati(prijava))
+                  : null,
+              onListaCekanja: akcije.contains(AkcijaKoordinatora.listaCekanja)
+                  ? () => zatvoriPa(() => _staviNaListuCekanja(prijava))
+                  : null,
+              onOdbij: akcije.contains(AkcijaKoordinatora.odbij) ? () => zatvoriPa(() => _odbij(prijava)) : null,
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   bool _dozvoljeno(AkcijaKoordinatora akcija) => _ucitano?.dozvoljeno(akcija) ?? false;
 
@@ -86,10 +139,11 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
     _bloc.add(OdbijanjeZatrazeno(cilj.id, razlog: razlog));
   }
 
+  
   Future<void> _prikaziMeni(Prijava prijava, Offset pozicija) async {
     final stanje = _ucitano;
     if (stanje == null) return;
-    final akcije = stanje.akcijaTraje ? const <AkcijaKoordinatora>{} : stanje.akcijeZa(prijava);
+    final akcije = stanje.zauzet ? const <AkcijaKoordinatora>{} : stanje.akcijeZa(prijava);
     final prekrivac = Overlay.of(context).context.findRenderObject()! as RenderBox;
     final izbor = await showMenu<String>(
       context: context,
@@ -112,7 +166,7 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
       case 'odbij':
         await _odbij(prijava);
       case 'detalji':
-        _izaberi(prijava);
+        _otvori(prijava);
     }
   }
 
@@ -131,6 +185,7 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
       },
       OdlukaOdbijena(:final greska) => greska.poruka,
       OdlukaNeuspela() => 'Odluka nije sačuvana. Pokušajte ponovo.',
+      PodaciOsvezeni() => 'Podaci su osveženi.',
     };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(poruka)));
     _bloc.add(const ObavestenjeKoordinatoraProcitano());
@@ -157,14 +212,18 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
             dozvoljena: () => _dozvoljeno(AkcijaKoordinatora.odbij),
             onInvoke: (_) => _odbij(),
           ),
-          ZatvoriDetaljIntent: CallbackAction<ZatvoriDetaljIntent>(
+          
+          ZatvoriDetaljIntent: ZasticenaAkcija<ZatvoriDetaljIntent>(
+            dozvoljena: () => !_usko && _ucitano?.izabrana != null,
             onInvoke: (_) {
               _izaberi(null);
-              _fokusTabele.requestFocus();
+              _fokusPrijava.requestFocus();
               return null;
             },
           ),
-          PregledPrecicaIntent: CallbackAction<PregledPrecicaIntent>(onInvoke: (_) => prikaziPregledPrecica(context)),
+          PregledPrecicaIntent: CallbackAction<PregledPrecicaIntent>(
+            onInvoke: (_) => prikaziPregledPrecica(context),
+          ),
         },
         child: FocusScope(
           autofocus: true,
@@ -173,10 +232,15 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
               title: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  const Logo(velicina: 34),
+                  const SizedBox(width: 12),
                   const Text('ErasmusGo'),
                   if (!usko) ...[
                     const SizedBox(width: 10),
-                    Text('Backoffice', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Backoffice',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Boje.belaProvidna),
+                    ),
                   ],
                 ],
               ),
@@ -253,8 +317,11 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
                   ),
                   KoordinatorUcitano() => _Sadrzaj(
                     stanje: stanje,
-                    fokusTabele: _fokusTabele,
+                    fokusPrijava: _fokusPrijava,
                     onIzaberi: _izaberi,
+                    onOtvori: _otvori,
+                    onOtvoriPodKursorom: _otvoriPodKursorom,
+                    onFilteri: _filtriraj,
                     onPrihvati: _prihvati,
                     onListaCekanja: _staviNaListuCekanja,
                     onOdbij: _odbij,
@@ -270,11 +337,15 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
   }
 }
 
+
 class _Sadrzaj extends StatelessWidget {
   const _Sadrzaj({
     required this.stanje,
-    required this.fokusTabele,
+    required this.fokusPrijava,
     required this.onIzaberi,
+    required this.onOtvori,
+    required this.onOtvoriPodKursorom,
+    required this.onFilteri,
     required this.onPrihvati,
     required this.onListaCekanja,
     required this.onOdbij,
@@ -282,69 +353,58 @@ class _Sadrzaj extends StatelessWidget {
   });
 
   final KoordinatorUcitano stanje;
-  final FocusNode fokusTabele;
+  final FocusNode fokusPrijava;
   final ValueChanged<Prijava?> onIzaberi;
+  final ValueChanged<Prijava> onOtvori;
+  final VoidCallback onOtvoriPodKursorom;
+  final ValueChanged<FilteriPrijava> onFilteri;
   final void Function([Prijava? prijava]) onPrihvati;
   final void Function([Prijava? prijava]) onListaCekanja;
   final Future<void> Function([Prijava? prijava]) onOdbij;
   final void Function(Prijava prijava, Offset pozicija) onKontekstMeni;
 
-  Future<void> _prikaziDonjiList(BuildContext context, Prijava prijava) {
-    final akcije = stanje.akcijeZa(prijava);
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (kontekstLista) {
-        void zatvoriPa(void Function() akcija) {
-          Navigator.pop(kontekstLista);
-          akcija();
-        }
-
-        return SizedBox(
-          height: MediaQuery.sizeOf(kontekstLista).height * 0.75,
-          child: DetaljPrijave(
-            prijava: prijava,
-            podaci: stanje.podaci,
-            onZatvori: () => Navigator.pop(kontekstLista),
-            onPrihvati: akcije.contains(AkcijaKoordinatora.prihvati)
-                ? () => zatvoriPa(() => onPrihvati(prijava))
-                : null,
-            onListaCekanja: akcije.contains(AkcijaKoordinatora.listaCekanja)
-                ? () => zatvoriPa(() => onListaCekanja(prijava))
-                : null,
-            onOdbij: akcije.contains(AkcijaKoordinatora.odbij) ? () => zatvoriPa(() => onOdbij(prijava)) : null,
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final izabrana = stanje.izabranaPrijava;
     final akcije = izabrana == null ? const <AkcijaKoordinatora>{} : stanje.akcijeZa(izabrana);
+    final prijave = stanje.prijave;
     final bloc = context.read<KoordinatorBloc>();
     return Column(
       children: [
-        if (stanje.akcijaTraje) const LinearProgressIndicator(minHeight: 3) else const SizedBox(height: 3),
+       
+        if (stanje.zauzet) const LinearProgressIndicator(minHeight: 3) else const SizedBox(height: 3),
         Expanded(
           child: LayoutBuilder(
             builder: (context, granice) {
               if (granice.maxWidth < PrijaveEkran.sirokoOd) {
-                return ListaPrijava(
-                  podaci: stanje.podaci,
-                  izabrana: stanje.izabrana,
-                  onIzaberi: (prijava) {
-                    onIzaberi(prijava);
-                    _prikaziDonjiList(context, prijava);
-                  },
-                  onKontekstMeni: onKontekstMeni,
+                return Column(
+                  children: [
+                    TrakaFiltera(stanje: stanje, onPromena: onFilteri, saPonudama: true),
+                    Expanded(
+                      child: ListaPrijava(
+                        podaci: stanje.podaci,
+                        prijave: prijave,
+                        kursor: stanje.kursor,
+                        izabrana: stanje.izabrana,
+                        focusNode: fokusPrijava,
+                        onKursorPomeren: (pomak) => bloc.add(KursorPomeren(pomak)),
+                        onKursorPostavljen: (indeks) => bloc.add(KursorPostavljen(indeks)),
+                        onAktiviran: onOtvoriPodKursorom,
+                        onIzaberi: onOtvori,
+                        onKontekstMeni: onKontekstMeni,
+                      ),
+                    ),
+                  ],
                 );
               }
               return Column(
                 children: [
-                  TrakaPopunjenosti(podaci: stanje.podaci),
+                  TrakaPopunjenosti(
+                    podaci: stanje.podaci,
+                    izabranaPonuda: stanje.filteri.ponuda,
+                    onIzaberiPonudu: (ponuda) => onFilteri(stanje.filteri.copyWith(ponuda: () => ponuda)),
+                  ),
+                  TrakaFiltera(stanje: stanje, onPromena: onFilteri),
                   const Divider(height: 1),
                   Expanded(
                     child: Row(
@@ -352,9 +412,10 @@ class _Sadrzaj extends StatelessWidget {
                         Expanded(
                           child: TabelaPrijava(
                             podaci: stanje.podaci,
+                            prijave: prijave,
                             kursor: stanje.kursor,
                             izabrana: stanje.izabrana,
-                            focusNode: fokusTabele,
+                            focusNode: fokusPrijava,
                             onKursorPomeren: (pomak) => bloc.add(KursorPomeren(pomak)),
                             onKursorPostavljen: (indeks) => bloc.add(KursorPostavljen(indeks)),
                             onAktiviran: () => bloc.add(const KursorAktiviran()),
@@ -369,7 +430,7 @@ class _Sadrzaj extends StatelessWidget {
                             child: DetaljPrijave(
                               prijava: izabrana,
                               podaci: stanje.podaci,
-                              akcijaTraje: stanje.akcijaTraje,
+                              akcijaTraje: stanje.zauzet,
                               onZatvori: () => onIzaberi(null),
                               onPrihvati: akcije.contains(AkcijaKoordinatora.prihvati)
                                   ? () => onPrihvati(izabrana)

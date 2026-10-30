@@ -54,18 +54,28 @@ class _ErasmusAplikacijaState extends State<ErasmusAplikacija> {
             )..add(const ProfilZatrazen()),
           ),
         ],
-        child: MaterialApp.router(
-          title: 'ErasmusGo',
-          debugShowCheckedModeBanner: false,
-          theme: AppTema.svetla(),
-          locale: ErasmusAplikacija.jezik,
-          supportedLocales: const [ErasmusAplikacija.jezik],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          routerConfig: _ruter,
+        // Sačuvane ponude prikazuje i profil (kartica „Sačuvano"), iz ProfilBloc-a. Kad PonudeBloc sačuva ili
+        // ukloni ponudu, profil se osvežava ovde, iznad rutera, jer ovaj listener postoji dok aplikacija radi.
+        // Ranije je to radio ekran Ponuda, pa ako se izašlo pre kraja čuvanja, nije imao ko da javi profilu.
+        child: BlocListener<PonudeBloc, PonudeStanje>(
+          listenWhen: (pre, sad) =>
+              sad is PonudeUcitane &&
+              (sad.obavestenje is PonudaSacuvana || sad.obavestenje is PonudaUklonjena) &&
+              (pre is! PonudeUcitane || pre.obavestenje != sad.obavestenje),
+          listener: (context, _) => context.read<ProfilBloc>().add(const ProfilOsvezen()),
+          child: MaterialApp.router(
+            title: 'ErasmusGo',
+            debugShowCheckedModeBanner: false,
+            theme: AppTema.svetla(),
+            locale: ErasmusAplikacija.jezik,
+            supportedLocales: const [ErasmusAplikacija.jezik],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            routerConfig: _ruter,
+          ),
         ),
       ),
     );

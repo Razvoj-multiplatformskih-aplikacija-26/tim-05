@@ -1,7 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:ui/ui.dart';
+
+import '../tema/tema.dart';
 
 class Logo extends StatelessWidget {
   const Logo({super.key, this.velicina = 42});

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui/ui.dart';
 
-import '../widgeti/logo.dart';
 
 class DobrodosliEkran extends StatelessWidget {
   const DobrodosliEkran({super.key});
