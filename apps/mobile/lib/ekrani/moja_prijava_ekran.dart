@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blocs/blocs.dart';
 import 'package:ui/ui.dart';
 
-
 import '../widgeti/nije_pronadjeno.dart';
 import '../widgeti/oznaka_drzave.dart';
 import '../widgeti/zaglavlje.dart';

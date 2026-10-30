@@ -70,8 +70,12 @@ final pocetniStudenti = <Student>[
     Jezik.italijanski: NivoJezika.b1,
   }, smer: 'Softversko inženjerstvo'),
   _student(_luka, 'Luka', 'Nikolić', 'RN 41/24', 8.10, {Jezik.engleski: NivoJezika.b2}),
-  _student(_mina, 'Mina', 'Đorđević', 'RI 7/23', 8.95, {Jezik.engleski: NivoJezika.b2}, smer: 'Računarsko inženjerstvo'),
-  _student(_jovana, 'Jovana', 'Ilić', 'SI 58/24', 7.85, {Jezik.engleski: NivoJezika.b2}, smer: 'Softversko inženjerstvo'),
+  _student(_mina, 'Mina', 'Đorđević', 'RI 7/23', 8.95, {
+    Jezik.engleski: NivoJezika.b2,
+  }, smer: 'Računarsko inženjerstvo'),
+  _student(_jovana, 'Jovana', 'Ilić', 'SI 58/24', 7.85, {
+    Jezik.engleski: NivoJezika.b2,
+  }, smer: 'Softversko inženjerstvo'),
   _student(_stefan, 'Stefan', 'Marković', 'RN 90/23', 8.42, {Jezik.engleski: NivoJezika.b1}),
   _student(_milica, 'Milica', 'Stojanović', 'RN 5/22', 9.80, {Jezik.engleski: NivoJezika.c2}, godina: 4),
 ];
@@ -173,22 +177,12 @@ final pocetnePrijave = <Prijava>[
     napravljenaPre: 12,
     pismo: 'Želim da u Milanu slušam predmete iz distribuiranih sistema i da radim na timskom projektu.',
   ),
-  _prijava(
-    'p-4',
-    _luka,
-    'po-1',
-    NaListiCekanja(odlucio: pocetniKoordinator.id, kada: _dan(-2)),
-    napravljenaPre: 9,
-  ),
+  _prijava('p-4', _luka, 'po-1', NaListiCekanja(odlucio: pocetniKoordinator.id, kada: _dan(-2)), napravljenaPre: 9),
   _prijava(
     'p-5',
     _mina,
     'po-1',
-    Odbijena(
-      odlucio: pocetniKoordinator.id,
-      kada: _dan(-2),
-      razlog: 'Prednost su imali studenti sa višim prosekom.',
-    ),
+    Odbijena(odlucio: pocetniKoordinator.id, kada: _dan(-2), razlog: 'Prednost su imali studenti sa višim prosekom.'),
     napravljenaPre: 15,
   ),
   _prijava('p-6', _jovana, 'po-1', Poslata(kada: _dan(-2)), napravljenaPre: 4),
@@ -197,26 +191,14 @@ final pocetnePrijave = <Prijava>[
 
   // 2 mesta zauzeta.
   _prijava('p-8', _milica, 'po-10', Potvrdjena(kada: _dan(-7)), napravljenaPre: 30),
-  _prijava(
-    'p-9',
-    _marko,
-    'po-10',
-    Prihvacena(odlucio: pocetniKoordinator.id, kada: _dan(-8)),
-    napravljenaPre: 28,
-  ),
+  _prijava('p-9', _marko, 'po-10', Prihvacena(odlucio: pocetniKoordinator.id, kada: _dan(-8)), napravljenaPre: 28),
   _prijava('p-10', _ana, 'po-10', Poslata(kada: _dan(-20)), napravljenaPre: 22),
   _prijava('p-11', _jovana, 'po-10', Povucena(kada: _dan(-12)), napravljenaPre: 25),
 
   // 3 mesta slobodna
   _prijava('p-12', _luka, 'po-11', Poslata(kada: _dan(-1)), napravljenaPre: 3),
   _prijava('p-13', _mina, 'po-11', Poslata(kada: _dan(-2)), napravljenaPre: 3),
-  _prijava(
-    'p-14',
-    _stefan,
-    'po-11',
-    NaListiCekanja(odlucio: pocetniKoordinator.id, kada: _dan(-1)),
-    napravljenaPre: 6,
-  ),
+  _prijava('p-14', _stefan, 'po-11', NaListiCekanja(odlucio: pocetniKoordinator.id, kada: _dan(-1)), napravljenaPre: 6),
   _prijava(
     'p-15',
     _milica,

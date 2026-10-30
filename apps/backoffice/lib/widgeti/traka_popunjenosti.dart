@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:ui/ui.dart';
 import 'package:use_cases/use_cases.dart';
 
-
 class TrakaPopunjenosti extends StatelessWidget {
   const TrakaPopunjenosti({super.key, required this.podaci});
 

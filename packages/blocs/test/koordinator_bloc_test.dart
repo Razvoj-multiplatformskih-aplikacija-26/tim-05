@@ -27,7 +27,10 @@ KoordinatorBloc napravi(TestBaza baza) => KoordinatorBloc(
 
 TestBaza dvePrijave() => TestBaza(
   student: student,
-  ponude: [ponuda(), ponuda(id: 'po-2')],
+  ponude: [
+    ponuda(),
+    ponuda(id: 'po-2'),
+  ],
   prijave: [
     prijava(stanje: poslata),
     prijava(id: 'p-2', idPonude: 'po-2', stanje: poslata),
@@ -47,11 +50,11 @@ void main() {
           .having((s) => s.prijave, 'prijave', hasLength(2))
           .having((s) => s.kursor, 'kursor', 0)
           .having((s) => s.izabrana, 'izabrana', isNull)
-          .having(
-            (s) => s.akcijeZa(s.prijave.first),
-            'akcije',
-            {AkcijaKoordinatora.prihvati, AkcijaKoordinatora.listaCekanja, AkcijaKoordinatora.odbij},
-          ),
+          .having((s) => s.akcijeZa(s.prijave.first), 'akcije', {
+            AkcijaKoordinatora.prihvati,
+            AkcijaKoordinatora.listaCekanja,
+            AkcijaKoordinatora.odbij,
+          }),
     ],
   );
 
@@ -151,11 +154,10 @@ void main() {
     },
     skip: 1,
     expect: () => [
-      isA<KoordinatorUcitano>().having(
-        (s) => s.akcijeZa(s.podaci.prijava(const IdPrijave('p-1'))!),
-        'akcije',
-        {AkcijaKoordinatora.listaCekanja, AkcijaKoordinatora.odbij},
-      ),
+      isA<KoordinatorUcitano>().having((s) => s.akcijeZa(s.podaci.prijava(const IdPrijave('p-1'))!), 'akcije', {
+        AkcijaKoordinatora.listaCekanja,
+        AkcijaKoordinatora.odbij,
+      }),
       isA<KoordinatorUcitano>().having((s) => s.uToku, 'u toku', const IdPrijave('p-1')),
       isA<KoordinatorUcitano>()
           .having((s) => s.uToku, 'u toku', isNull)

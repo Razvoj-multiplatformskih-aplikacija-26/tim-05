@@ -6,7 +6,6 @@ abstract final class Tipografija {
   static const paket = 'ui';
 
   static TextTheme tema(ColorScheme shema) {
-    
     const naslov = TextStyle(fontFamily: fontNaslova, package: paket, fontWeight: FontWeight.w600, height: 1.15);
     const obican = TextStyle(fontFamily: fontTeksta, package: paket, fontWeight: FontWeight.w400, height: 1.45);
     const oznaka = TextStyle(fontFamily: fontTeksta, package: paket, fontWeight: FontWeight.w700, height: 1.2);

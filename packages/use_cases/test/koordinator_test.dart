@@ -4,7 +4,6 @@ import 'package:use_cases/use_cases.dart';
 
 import 'test_baza.dart';
 
-
 const koordinatorMilano = Korisnik(
   id: IdKorisnika('k-1'),
   korisnickoIme: 'koordinator.milano',
@@ -66,8 +65,15 @@ void main() {
     test('vraca prijave na ponude svog univerziteta, bez prijava u pripremi', () async {
       final baza = TestBaza(
         student: student,
-        ponude: [ponuda(), ponuda(id: 'po-2')],
-        prijave: [prijava('p-1'), prijava('p-2', idPonude: 'po-2'), prijava('p-3', stanje: const UPripremi())],
+        ponude: [
+          ponuda(),
+          ponuda(id: 'po-2'),
+        ],
+        prijave: [
+          prijava('p-1'),
+          prijava('p-2', idPonude: 'po-2'),
+          prijava('p-3', stanje: const UPripremi()),
+        ],
       );
       final ucitaj = UcitajPregledKoordinatora(ponude: baza, prijave: baza, studenti: baza, sat: sat);
 

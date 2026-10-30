@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:ui/ui.dart';
 import 'package:use_cases/use_cases.dart';
 
-
 class TabelaPrijava extends StatefulWidget {
   const TabelaPrijava({
     super.key,
@@ -236,7 +235,6 @@ class _Zaglavlje extends StatelessWidget {
   }
 }
 
-
 class _RedPrijave extends StatelessWidget {
   const _RedPrijave({
     required this.prijava,
@@ -308,10 +306,7 @@ class _RedPrijave extends StatelessWidget {
                   ],
                 ),
                 ponuda: Text(ponuda.oblast, style: tekst.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-                prosek: _Uslov(
-                  tekst: student == null ? '—' : formatProsek(student.prosek),
-                  ispunjen: imaProsek,
-                ),
+                prosek: _Uslov(tekst: student == null ? '—' : formatProsek(student.prosek), ispunjen: imaProsek),
                 jezik: _Uslov(tekst: nivo, ispunjen: imaJezik),
                 datum: Text(formatKratakDatum(prijava.napravljena), style: tekst.bodyMedium),
                 stanje: OznakaStanja(stanje: prijava.stanje),
@@ -323,7 +318,6 @@ class _RedPrijave extends StatelessWidget {
     );
   }
 }
-
 
 class _Uslov extends StatelessWidget {
   const _Uslov({required this.tekst, required this.ispunjen});

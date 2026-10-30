@@ -3,7 +3,6 @@ import 'package:use_cases/use_cases.dart';
 
 import 'lazni_podaci.dart';
 
-
 final class LaznaBaza implements PonudaRepository, PrijavaRepository, StudentRepository {
   LaznaBaza({this.kasnjenje = const Duration(milliseconds: 400)})
     : _univerziteti = List.of(pocetniUniverziteti),
@@ -79,7 +78,6 @@ final class LaznaBaza implements PonudaRepository, PrijavaRepository, StudentRep
     await _zahtev();
     _studenti[student.id] = student;
   }
-
 
   @override
   Future<Set<IdPonude>> sacuvanePonude(IdKorisnika idStudenta) async {

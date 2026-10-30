@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:use_cases/use_cases.dart';
 import 'package:ui/ui.dart';
 
-
 import '../widgeti/isprekidana_linija.dart';
 import '../widgeti/lista_uslova.dart';
 import '../widgeti/nije_pronadjeno.dart';

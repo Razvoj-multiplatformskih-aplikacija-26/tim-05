@@ -43,7 +43,10 @@ class _DijalogOdbijanjaState extends State<_DijalogOdbijanja> {
               controller: _razlog,
               autofocus: true,
               maxLines: 1,
-              decoration: const InputDecoration(labelText: 'Razlog', helperText: 'Student vidi razlog u svojoj prijavi.'),
+              decoration: const InputDecoration(
+                labelText: 'Razlog',
+                helperText: 'Student vidi razlog u svojoj prijavi.',
+              ),
               onSubmitted: (_) => _potvrdi(),
             ),
           ],
