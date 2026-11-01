@@ -53,7 +53,7 @@ Rezultat<Prijava> izmeniPrijavu(
 
   if (!prijava.stanje.mozeSeMenjati) return const Neuspeh(IzmenaNijeMoguca());
 
-  return Uspeh(prijava.copyWith(motivacionoPismo: motivacionoPismo, napomena: napomena));
+  return Uspeh(prijava.copyWith(motivacionoPismo: motivacionoPismo, napomena: () => napomena));
 }
 
 Rezultat<Prijava> povuciPrijavu(Prijava prijava, {required Korisnik ko, required DateTime sada}) {

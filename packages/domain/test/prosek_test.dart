@@ -18,9 +18,27 @@ void main() {
       expect(Prosek.proveri('10,01').greskaIliNull, isA<ProsekVanOpsega>());
     });
 
+    test('granice i sa više decimala', () {
+      expect(Prosek.proveri('5,999').greskaIliNull, isA<ProsekVanOpsega>());
+      expect(Prosek.proveri('6,000').jeUspeh, isTrue);
+      expect(Prosek.proveri('10,0001').greskaIliNull, isA<ProsekVanOpsega>());
+    });
+
+    test('nula i negativan broj su van opsega', () {
+      expect(Prosek.proveri('0').greskaIliNull, isA<ProsekVanOpsega>());
+      expect(Prosek.proveri('-8').greskaIliNull, isA<ProsekVanOpsega>());
+    });
+
     test('tekst koji nije broj', () {
-      expect(Prosek.proveri('').greskaIliNull, isA<ProsekNijeBroj>());
-      expect(Prosek.proveri('osam').greskaIliNull, isA<ProsekNijeBroj>());
+      for (final unos in ['', ' ', 'osam', '8,7,4', '8 5', ',', '--8']) {
+        expect(Prosek.proveri(unos).greskaIliNull, isA<ProsekNijeBroj>(), reason: 'unos: "$unos"');
+      }
+    });
+
+    test('NaN nije prosek, a beskonačnost je van opsega', () {
+      expect(Prosek.proveri('NaN').greskaIliNull, isA<ProsekNijeBroj>());
+      expect(Prosek.proveri('Infinity').greskaIliNull, isA<ProsekVanOpsega>());
+      expect(Prosek.proveri('-Infinity').greskaIliNull, isA<ProsekVanOpsega>());
     });
   });
 }
