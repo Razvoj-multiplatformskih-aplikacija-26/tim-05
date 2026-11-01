@@ -31,8 +31,7 @@ final class PregledPodataka extends Equatable {
 
   Prijava? prijava(IdPrijave id) => svePrijave.where((p) => p.id == id).firstOrNull;
 
-  Prijava? mojaPrijavaZa(IdPonude idPonude) =>
-      mojePrijave.where((p) => p.idPonude == idPonude && !p.stanje.jeKonacno).firstOrNull;
+  Prijava? mojaPrijavaZa(IdPonude idPonude) => nezavrsenaPrijava(student.id, idPonude, mojePrijave);
 
   bool jeSacuvana(IdPonude id) => sacuvane.contains(id);
 

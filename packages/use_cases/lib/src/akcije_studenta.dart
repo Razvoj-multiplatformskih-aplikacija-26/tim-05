@@ -36,14 +36,17 @@ final class SacuvajPrijavu {
       if (izmena case Neuspeh(:final greska)) return Neuspeh(greska);
       prijava = izmena.vrednostIliNull!;
     } else if (idPonude != null) {
-      prijava = Prijava(
+      final nova = napraviPrijavu(
         id: IdPrijave('p-${sada.microsecondsSinceEpoch}'),
-        idStudenta: ko.id,
+        ko: ko,
         idPonude: idPonude,
         motivacionoPismo: pismo,
         napomena: napomena,
-        napravljena: sada,
+        svePrijave: sve,
+        sada: sada,
       );
+      if (nova case Neuspeh(:final greska)) return Neuspeh(greska);
+      prijava = nova.vrednostIliNull!;
     } else {
       return const Neuspeh(NijePronadjeno());
     }

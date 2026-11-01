@@ -114,6 +114,13 @@ void main() {
       expect(rezultat.vrednostIliNull?.stanje, isA<Poslata>());
       expect(baza.prijave.single.stanje, isA<Poslata>());
     });
+    test('druga nova prijava na istu ponudu vraca VecPostojiPrijava i ništa ne cuva', () async {
+      final baza = TestBaza(student: student, ponude: [ponuda()], prijave: [prijava()]);
+      final rezultat = await sacuvajPrijavu(baza)(ko: andrej, idPonude: const IdPonude('po-1'), pismo: pismo);
+      expect(rezultat.greskaIliNull, isA<VecPostojiPrijava>());
+      expect(baza.prijave, hasLength(1));
+    });
+
   });
 
   group('Akcije nad prijavom', () {

@@ -134,6 +134,7 @@ final class VecPotvrdjenoMesto extends GreskaDomena {
   const VecPotvrdjenoMesto();
 }
 
+
 final class BrisanjeNijeMoguce extends GreskaDomena {
   const BrisanjeNijeMoguce();
 }
@@ -144,4 +145,8 @@ final class ProsekNijeBroj extends GreskaDomena {
 
 final class ProsekVanOpsega extends GreskaDomena {
   const ProsekVanOpsega();
+}
+
+final class VecPostojiPrijava extends GreskaDomena {
+  const VecPostojiPrijava();
 }

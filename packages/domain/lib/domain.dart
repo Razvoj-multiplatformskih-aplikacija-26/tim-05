@@ -4,6 +4,7 @@ export 'src/jezik.dart';
 export 'src/korisnik.dart';
 export 'src/ponuda/ponuda.dart';
 export 'src/ponuda/semestar.dart';
+export 'src/pravila/jedna_prijava.dart';
 export 'src/pravila/mesta.dart';
 export 'src/pravila/uslovi_ponude.dart';
 export 'src/prosek.dart';
