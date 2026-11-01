@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blocs/blocs.dart';
@@ -8,6 +9,8 @@ import 'app.dart';
 import 'zavisnosti.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized(); 
+  if (kIsWeb) BrowserContextMenu.disableContextMenu(); 
   usePathUrlStrategy();
   if (kDebugMode) Bloc.observer = KonzolniBlocObserver(debugPrint);
   runApp(BackofficeAplikacija(zavisnosti: ZavisnostiBackoffice.lazne()));
