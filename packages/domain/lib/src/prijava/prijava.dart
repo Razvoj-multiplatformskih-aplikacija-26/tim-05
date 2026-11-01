@@ -31,13 +31,13 @@ final class Prijava {
 
   bool get jeAktivna => stanje.jeAktivna;
 
-  Prijava copyWith({StanjePrijave? stanje, MotivacionoPismo? motivacionoPismo, String? napomena}) {
+  Prijava copyWith({StanjePrijave? stanje, MotivacionoPismo? motivacionoPismo, String? Function()? napomena}) {
     return Prijava(
       id: id,
       idStudenta: idStudenta,
       idPonude: idPonude,
       motivacionoPismo: motivacionoPismo ?? this.motivacionoPismo,
-      napomena: napomena ?? this.napomena,
+      napomena: napomena == null ? this.napomena : napomena(),
       stanje: stanje ?? this.stanje,
       napravljena: napravljena,
     );

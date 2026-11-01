@@ -234,4 +234,74 @@ void main() {
       expect(rezultat.greskaIliNull, isA<NemaPravo>());
     });
   });
+
+  group('Izmena prijave: napomena se može i obrisati', () {
+    final saNapomenom = prijava(stanje: Poslata(kada: sada)).copyWith(napomena: () => 'Zanima me produženje.');
+
+    test('izmena bez napomene briše staru napomenu', () {
+      final rezultat = izmeniPrijavu(saNapomenom, ko: andrej, motivacionoPismo: pismo);
+      expect(rezultat.vrednostIliNull!.napomena, isNull);
+    });
+
+    test('izmena sa novom napomenom je menja', () {
+      final rezultat = izmeniPrijavu(saNapomenom, ko: andrej, motivacionoPismo: pismo, napomena: 'Nova napomena.');
+      expect(rezultat.vrednostIliNull!.napomena, 'Nova napomena.');
+    });
+
+    test('izmena ne dira stanje, vlasnika ni ponudu', () {
+      final nova = izmeniPrijavu(saNapomenom, ko: andrej, motivacionoPismo: pismo).vrednostIliNull!;
+      expect(nova.stanje, saNapomenom.stanje);
+      expect(nova.idStudenta, saNapomenom.idStudenta);
+      expect(nova.idPonude, saNapomenom.idPonude);
+    });
+
+    test('copyWith bez napomene je ne dira', () {
+      expect(saNapomenom.copyWith(stanje: Povucena(kada: sada)).napomena, 'Zanima me produženje.');
+    });
+  });
+
+  group('Lista čekanja i odbijanje (README, zahtev 2)', () {
+    Prijava poslata() => prijava(stanje: Poslata(kada: sada));
+
+    test('lista čekanja pamti ko je odlučio i kada', () {
+      final rezultat = staviNaListuCekanja(poslata(), ko: koordinatorMilano, ponuda: ponuda(), sada: sada);
+      expect(rezultat.vrednostIliNull!.stanje, NaListiCekanja(odlucio: koordinatorMilano.id, kada: sada));
+    });
+
+    test('prihvaćena prijava ne može na listu čekanja', () {
+      final prihvacena = prijava(stanje: Prihvacena(odlucio: koordinatorMilano.id, kada: sada));
+      final rezultat = staviNaListuCekanja(prihvacena, ko: koordinatorMilano, ponuda: ponuda(), sada: sada);
+      expect(rezultat.greskaIliNull, isA<NedozvoljenPrelaz>());
+    });
+
+    test('odbijanje pamti razlog', () {
+      final rezultat = odbijPrijavu(poslata(), ko: koordinatorMilano, ponuda: ponuda(), razlog: 'Slab prosek', sada: sada);
+      expect(
+        rezultat.vrednostIliNull!.stanje,
+        Odbijena(odlucio: koordinatorMilano.id, kada: sada, razlog: 'Slab prosek'),
+      );
+    });
+
+    test('student ne može da stavi na listu čekanja ni da odbije', () {
+      expect(
+        staviNaListuCekanja(poslata(), ko: andrej, ponuda: ponuda(), sada: sada).greskaIliNull,
+        isA<NemaPravo>(),
+      );
+      expect(
+        odbijPrijavu(poslata(), ko: andrej, ponuda: ponuda(), razlog: 'x', sada: sada).greskaIliNull,
+        isA<NemaPravo>(),
+      );
+    });
+
+    test('pogrešna ponuda (prijava je za drugu) daje NemaPravo', () {
+      final rezultat = odbijPrijavu(
+        poslata(),
+        ko: koordinatorMilano,
+        ponuda: ponuda(id: 'po-2'),
+        razlog: 'x',
+        sada: sada,
+      );
+      expect(rezultat.greskaIliNull, isA<NemaPravo>());
+    });
+  });
 }

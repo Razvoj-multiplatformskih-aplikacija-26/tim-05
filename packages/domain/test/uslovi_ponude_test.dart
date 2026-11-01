@@ -144,4 +144,70 @@ void main() {
       expect(rezultat.jeUspeh, isTrue);
     });
   });
+
+  group('Uslovi ponude: granice', () {
+    Student saProsekom(double prosek) => Student(
+      id: studentAndrej.id,
+      ime: studentAndrej.ime,
+      prezime: studentAndrej.prezime,
+      brojIndeksa: studentAndrej.brojIndeksa,
+      email: studentAndrej.email,
+      fakultet: studentAndrej.fakultet,
+      smer: studentAndrej.smer,
+      godinaStudija: studentAndrej.godinaStudija,
+      prosek: prosek,
+      znanjeJezika: studentAndrej.znanjeJezika,
+    );
+
+    List<Prijava> aktivne(int broj, {String idStudenta = 's-1'}) => [
+      for (var i = 0; i < broj; i++)
+        prijava(id: 'a-$i', idStudenta: idStudenta, idPonude: 'po-${i + 10}', stanje: Poslata(kada: sada)),
+    ];
+
+    test('rok u istom trenutku kao „sada" još važi', () {
+      final rezultat = proveriUslove(student: studentAndrej, ponuda: ponuda(rok: sada), svePrijave: const [], sada: sada);
+      expect(rezultat.jeUspeh, isTrue);
+    });
+
+    test('rok istekao pre jedne sekunde', () {
+      final rok = sada.subtract(const Duration(seconds: 1));
+      final rezultat = proveriUslove(student: studentAndrej, ponuda: ponuda(rok: rok), svePrijave: const [], sada: sada);
+      expect(rezultat.greskaIliNull, RokIstekao(rok));
+    });
+
+    test('prosek tačno jednak traženom prolazi, a 0,01 niži ne', () {
+      expect(
+        proveriUslove(student: saProsekom(8.0), ponuda: ponuda(), svePrijave: const [], sada: sada).jeUspeh,
+        isTrue,
+      );
+      expect(
+        proveriUslove(student: saProsekom(7.99), ponuda: ponuda(), svePrijave: const [], sada: sada).greskaIliNull,
+        const NedovoljanProsek(trazeni: 8.0, studentov: 7.99),
+      );
+    });
+
+    test('sa 2 aktivne prijave može treća', () {
+      final rezultat = proveriUslove(student: studentAndrej, ponuda: ponuda(), svePrijave: aktivne(2), sada: sada);
+      expect(rezultat.jeUspeh, isTrue);
+    });
+
+    test('prihvaćena prijava se broji kao aktivna', () {
+      final tri = [
+        ...aktivne(2),
+        prijava(id: 'a-9', idPonude: 'po-19', stanje: Prihvacena(odlucio: koordinatorMilano.id, kada: sada)),
+      ];
+      final rezultat = proveriUslove(student: studentAndrej, ponuda: ponuda(), svePrijave: tri, sada: sada);
+      expect(rezultat.greskaIliNull, const PrevisePrijava(najviseAktivnihPrijava));
+    });
+
+    test('prijave u pripremi i tuđe aktivne prijave se ne broje', () {
+      final prijave = [
+        ...aktivne(2),
+        for (var i = 0; i < 3; i++) prijava(id: 'n-$i', idPonude: 'po-2$i'),
+        ...aktivne(5, idStudenta: 's-2'),
+      ];
+      final rezultat = proveriUslove(student: studentAndrej, ponuda: ponuda(), svePrijave: prijave, sada: sada);
+      expect(rezultat.jeUspeh, isTrue);
+    });
+  });
 }
