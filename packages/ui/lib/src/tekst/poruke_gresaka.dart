@@ -25,5 +25,6 @@ extension PorukaGreske on GreskaDomena {
     BrisanjeNijeMoguce() => 'Može se obrisati samo odbijena ili povučena prijava.',
     ProsekNijeBroj() => 'Unesite prosek kao broj, na primer 8,74.',
     ProsekVanOpsega() => 'Prosek mora biti između ${formatProsek(Prosek.najmanje)} i ${formatProsek(Prosek.najvise)}.',
+    VecPostojiPrijava() => 'Već imate prijavu na ovu ponudu. Nastavite je iz profila.',
   };
 }
