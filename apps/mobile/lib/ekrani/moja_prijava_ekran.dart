@@ -225,7 +225,7 @@ class _MojaPrijava extends StatelessWidget {
                       padding: EdgeInsets.only(top: 12),
                       child: LinearProgressIndicator(color: Boje.bordo),
                     ),
-                  if (stanje is Prihvacena)
+                  if (podaci.mozeSeOdlucitiOMestu(prijava))
                     _PonudjenoMesto(
                       semestar: nazivSemestra(ponuda.semestar).toLowerCase(),
                       onPrihvati: uToku
@@ -305,7 +305,7 @@ class _MojaPrijava extends StatelessWidget {
                         Expanded(
                           child: FilledButton(
                             onPressed: uToku ? null : () => _izmeni(context),
-                            child: Text(stanje is UPripremi ? 'Izmeni i pošalji' : 'Izmeni'),
+                            child: Text(podaci.mozeSePoslati(prijava) ? 'Izmeni i pošalji' : 'Izmeni'),
                           ),
                         ),
                     ],

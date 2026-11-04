@@ -54,6 +54,8 @@ final class PregledPodataka extends Equatable {
 
   bool mozeSePoslati(Prijava? prijava) => dozvoljenPrelaz(prijava?.stanje ?? const UPripremi(), Poslata(kada: sada));
 
+  bool mozeSeOdlucitiOMestu(Prijava prijava) => dozvoljenPrelaz(prijava.stanje, Potvrdjena(kada: sada));
+
   bool mozeSePovuci(Prijava prijava) =>
       prijava.stanje is! Prihvacena && dozvoljenPrelaz(prijava.stanje, Povucena(kada: sada));
 
