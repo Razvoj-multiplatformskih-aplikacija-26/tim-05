@@ -38,6 +38,26 @@ void main() {
       expect(preostalaMesta(ponuda(brojMesta: 4), const []), 4);
     });
   });
+  group('zauzetaMesta', () {
+    test('broji samo prihvacene i potvrdjene prijave na tu ponudu', () {
+      final sve = [
+        prijava(id: '1', idStudenta: 's-1', stanje: Prihvacena(odlucio: koordinatorMilano.id, kada: sada)),
+        prijava(id: '2', idStudenta: 's-2', stanje: Potvrdjena(kada: sada)),
+        prijava(id: '3', idStudenta: 's-3', stanje: Poslata(kada: sada)),
+        prijava(id: '4', idStudenta: 's-4', idPonude: 'po-2', stanje: Potvrdjena(kada: sada)),
+      ];
+      expect(zauzetaMesta(ponuda(brojMesta: 5), sve), 2);
+    });
+
+    test('kad je ponuda prepunjena, pokazuje stvaran broj, a slobodnih je 0', () {
+      final sve = [
+        prijava(id: '1', idStudenta: 's-1', stanje: Potvrdjena(kada: sada)),
+        prijava(id: '2', idStudenta: 's-2', stanje: Potvrdjena(kada: sada)),
+      ];
+      expect(zauzetaMesta(ponuda(brojMesta: 1), sve), 2);
+      expect(preostalaMesta(ponuda(brojMesta: 1), sve), 0);
+    });
+  });
 
   group('aktivnePrijave (najvise tri aktivne)', () {
     test('vraca samo aktivne prijave tog studenta', () {

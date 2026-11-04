@@ -49,9 +49,8 @@ class _KarticaPonude extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tekst = Theme.of(context).textTheme;
-    final slobodno = podaci.slobodnaMesta(ponuda);
-    final zauzeto = ponuda.brojMesta - slobodno;
-    final popunjeno = slobodno == 0;
+    final zauzeto = podaci.zauzetaMesta(ponuda);
+    final popunjeno = podaci.slobodnaMesta(ponuda) == 0;
     final oblik = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12),
       side: BorderSide(color: izabrana ? Boje.bordo : Boje.ivica, width: izabrana ? 2 : 1),
@@ -84,7 +83,7 @@ class _KarticaPonude extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   LinearProgressIndicator(
-                    value: ponuda.brojMesta == 0 ? 1.0 : zauzeto / ponuda.brojMesta,
+                    value: ponuda.brojMesta == 0 ? 1.0 : (zauzeto / ponuda.brojMesta).clamp(0.0, 1.0),
                     minHeight: 6,
                     borderRadius: BorderRadius.circular(3),
                     color: popunjeno ? Boje.greska : Boje.uspeh,

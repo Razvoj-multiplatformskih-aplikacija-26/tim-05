@@ -31,6 +31,8 @@ final class PregledKoordinatora extends Equatable {
 
   int slobodnaMesta(Ponuda ponuda) => preostalaMesta(ponuda, prijave);
 
+  int zauzetaMesta(Ponuda ponuda) => domen.zauzetaMesta(ponuda, prijave);
+
   int brojPrijava(Ponuda ponuda) => prijave.where((p) => p.idPonude == ponuda.id).length;
 
   bool imaProsek(Prijava prijava) {

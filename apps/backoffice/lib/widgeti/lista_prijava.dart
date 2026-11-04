@@ -136,7 +136,7 @@ class _ListaPrijavaState extends State<ListaPrijava> {
                         header: true,
                         child: Text(
                           '${ponuda.oblast} · zauzeta mesta: '
-                          '${ponuda.brojMesta - podaci.slobodnaMesta(ponuda)}/${ponuda.brojMesta}',
+                          '${podaci.zauzetaMesta(ponuda)}/${ponuda.brojMesta}',
                           style: tema.textTheme.titleMedium,
                         ),
                       ),
