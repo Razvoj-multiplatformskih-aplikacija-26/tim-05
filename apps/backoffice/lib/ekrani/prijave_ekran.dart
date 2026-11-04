@@ -96,21 +96,51 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
           akcija();
         }
 
-        return SizedBox(
-          height: MediaQuery.sizeOf(kontekstLista).height * 0.75,
-          child: FocusScope(
-            autofocus: true,
-            child: DetaljPrijave(
-              prijava: prijava,
-              podaci: stanje.podaci,
-              onZatvori: () => Navigator.pop(kontekstLista),
-              onPrihvati: akcije.contains(AkcijaKoordinatora.prihvati)
-                  ? () => zatvoriPa(() => _prihvati(prijava))
-                  : null,
-              onListaCekanja: akcije.contains(AkcijaKoordinatora.listaCekanja)
-                  ? () => zatvoriPa(() => _staviNaListuCekanja(prijava))
-                  : null,
-              onOdbij: akcije.contains(AkcijaKoordinatora.odbij) ? () => zatvoriPa(() => _odbij(prijava)) : null,
+        bool sme(AkcijaKoordinatora akcija) => akcije.contains(akcija) && !(_ucitano?.zauzet ?? true);
+
+        return Shortcuts(
+          shortcuts: precicePrijava(),
+          child: Actions(
+            actions: {
+              PrihvatiIntent: ZasticenaAkcija<PrihvatiIntent>(
+                dozvoljena: () => sme(AkcijaKoordinatora.prihvati),
+                onInvoke: (_) => zatvoriPa(() => _prihvati(prijava)),
+              ),
+              ListaCekanjaIntent: ZasticenaAkcija<ListaCekanjaIntent>(
+                dozvoljena: () => sme(AkcijaKoordinatora.listaCekanja),
+                onInvoke: (_) => zatvoriPa(() => _staviNaListuCekanja(prijava)),
+              ),
+              OdbijIntent: ZasticenaAkcija<OdbijIntent>(
+                dozvoljena: () => sme(AkcijaKoordinatora.odbij),
+                onInvoke: (_) => zatvoriPa(() => _odbij(prijava)),
+              ),
+              ZatvoriDetaljIntent: CallbackAction<ZatvoriDetaljIntent>(
+                onInvoke: (_) {
+                  Navigator.pop(kontekstLista);
+                  return null;
+                },
+              ),
+              PregledPrecicaIntent: CallbackAction<PregledPrecicaIntent>(
+                onInvoke: (_) => prikaziPregledPrecica(context),
+              ),
+            },
+            child: SizedBox(
+              height: MediaQuery.sizeOf(kontekstLista).height * 0.75,
+              child: FocusScope(
+                autofocus: true,
+                child: DetaljPrijave(
+                  prijava: prijava,
+                  podaci: stanje.podaci,
+                  onZatvori: () => Navigator.pop(kontekstLista),
+                  onPrihvati: akcije.contains(AkcijaKoordinatora.prihvati)
+                      ? () => zatvoriPa(() => _prihvati(prijava))
+                      : null,
+                  onListaCekanja: akcije.contains(AkcijaKoordinatora.listaCekanja)
+                      ? () => zatvoriPa(() => _staviNaListuCekanja(prijava))
+                      : null,
+                  onOdbij: akcije.contains(AkcijaKoordinatora.odbij) ? () => zatvoriPa(() => _odbij(prijava)) : null,
+                ),
+              ),
             ),
           ),
         );
