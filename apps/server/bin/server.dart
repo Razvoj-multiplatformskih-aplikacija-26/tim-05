@@ -9,8 +9,14 @@ Future<void> main() async {
   final konfiguracija = KonfiguracijaServera.izOkruzenja(serverEnvironment());
   final baza = Pool<void>.withUrl(konfiguracija.adresaBaze);
   await upisiPocetnePodatke(baza, sada: DateTime.now(), demoLozinka: konfiguracija.demoLozinka);
+  final sesije = RukovaociSesija(
+    nalozi: SkladisteNaloga(baza),
+    tajna: konfiguracija.tajnaZaTokene,
+    trajanje: konfiguracija.trajanjeSesije,
+    bezbedanKolacic: konfiguracija.bezbedanKolacic,
+  );
   final server = RelicServer(() => IOAdapter.bind(InternetAddress(konfiguracija.host), port: konfiguracija.port));
-  await server.mountAndStart(napraviHandler());
+  await server.mountAndStart(napraviHandler(sesije, dozvoljenaPorekla: konfiguracija.dozvoljenaPorekla));
   stdout.writeln('ErasmusGo server na http://${konfiguracija.host}:${konfiguracija.port}');
   await _signalZaKraj();
   await server.close();
