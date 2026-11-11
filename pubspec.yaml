@@ -8,10 +8,13 @@ environment:
 workspace:
   - apps/mobile
   - apps/backoffice
+  - apps/server
   - packages/domain
   - packages/use_cases
   - packages/blocs
   - packages/ui
+  - packages/api_contract
+  - packages/api_mapping
 
 
 dev_dependencies:
