@@ -1,0 +1,19 @@
+name: server
+description: Server sistema za Erasmus prijave, na Relic-u i PostgreSQL-u, sa istim domenskim pravilima kao klijenti.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dependencies:
+  domain:
+    path: ../../packages/domain
+  hashlib: 2.4.2
+  pool: 1.5.3
+  postgres: 3.5.18
+  relic: 1.2.0
+
+dev_dependencies:
+  test: 1.31.1
