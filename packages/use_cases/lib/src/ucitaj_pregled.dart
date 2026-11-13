@@ -19,16 +19,18 @@ final class UcitajPregled {
     final odgovori = await Future.wait<Object>([
       ponude.ponude(),
       ponude.univerziteti(),
-      prijave.svePrijave(),
+      prijave.prijaveStudenta(ko.id),
+      ponude.zauzetaMesta(),
       studenti.student(ko.id),
       studenti.sacuvanePonude(ko.id),
     ]);
     return PregledPodataka(
       ponude: odgovori[0] as List<Ponuda>,
       univerziteti: odgovori[1] as List<Univerzitet>,
-      svePrijave: odgovori[2] as List<Prijava>,
-      student: odgovori[3] as Student,
-      sacuvane: odgovori[4] as Set<IdPonude>,
+      prijaveStudenta: odgovori[2] as List<Prijava>,
+      zauzetaMesta: odgovori[3] as Map<IdPonude, int>,
+      student: odgovori[4] as Student,
+      sacuvane: odgovori[5] as Set<IdPonude>,
       sada: sat.sada(),
     );
   }

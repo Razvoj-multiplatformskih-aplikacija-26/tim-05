@@ -129,7 +129,7 @@ void main() {
         student: student,
         prijave: [prijava(stanje: Poslata(kada: sat.sada()))],
       );
-      final rezultat = await PovuciPrijavu(prijave: baza, sat: sat)(ko: andrej, id: const IdPrijave('p-1'));
+      final rezultat = await PovuciPrijavu(ponude: baza, prijave: baza, sat: sat)(ko: andrej, id: const IdPrijave('p-1'));
       expect(rezultat.jeUspeh, isTrue);
       expect(baza.prijave.single.stanje, isA<Povucena>());
     });
@@ -162,7 +162,7 @@ void main() {
 
     test('brisanje prijave u pripremi nije dozvoljeno', () async {
       final baza = TestBaza(student: student, prijave: [prijava()]);
-      final rezultat = await ObrisiPrijavu(prijave: baza)(ko: andrej, id: const IdPrijave('p-1'));
+      final rezultat = await ObrisiPrijavu(ponude: baza, prijave: baza)(ko: andrej, id: const IdPrijave('p-1'));
       expect(rezultat.greskaIliNull, isA<BrisanjeNijeMoguce>());
       expect(baza.prijave, hasLength(1));
     });

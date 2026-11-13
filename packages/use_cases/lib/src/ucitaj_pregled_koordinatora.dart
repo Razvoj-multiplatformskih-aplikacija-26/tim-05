@@ -21,7 +21,13 @@ final class UcitajPregledKoordinatora {
   final Sat sat;
 
   Future<PregledKoordinatora> call(Korisnik ko) async {
-    final odgovori = await Future.wait<Object>([ponude.ponude(), ponude.univerziteti(), prijave.svePrijave()]);
+    final idUniverziteta = ko.idUniverziteta;
+    if (idUniverziteta == null) throw const GreskaRepozitorijuma('Univerzitet koordinatora nije pronadjen');
+    final odgovori = await Future.wait<Object>([
+      ponude.ponude(),
+      ponude.univerziteti(),
+      prijave.prijaveNaPonudeUniverziteta(idUniverziteta),
+    ]);
     final svePonude = odgovori[0] as List<Ponuda>;
     final univerziteti = odgovori[1] as List<Univerzitet>;
     final svePrijave = odgovori[2] as List<Prijava>;

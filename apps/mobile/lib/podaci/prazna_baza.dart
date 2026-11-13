@@ -15,15 +15,44 @@ final class PraznaBaza implements PonudaRepository, PrijavaRepository, StudentRe
   Future<List<Univerzitet>> univerziteti() async => const [];
 
   @override
-  Future<List<Prijava>> svePrijave() async => List.unmodifiable(_prijave);
+  Future<Map<IdPonude, int>> zauzetaMesta() async => const {};
 
   @override
-  Future<void> sacuvaj(List<Prijava> prijave) async {
-    for (final prijava in prijave) {
+  Future<Prijava?> prijava(IdPrijave id) async => _prijave.where((p) => p.id == id).firstOrNull;
+
+  @override
+  Future<List<Prijava>> prijaveStudenta(IdKorisnika idStudenta) async =>
+      List.unmodifiable(_prijave.where((p) => p.idStudenta == idStudenta));
+
+  @override
+  Future<List<Prijava>> prijaveNaPonudeUniverziteta(IdUniverziteta idUniverziteta) async => const [];
+
+  @override
+  Future<Rezultat<Prijava>> napravi(Prijava nova) async {
+    _prijave.add(nova);
+    return Uspeh(nova);
+  }
+
+  @override
+  Future<Rezultat<Prijava>> sacuvaj(Prijava nova, {required StanjePrijave iz}) async {
+    final indeks = _prijave.indexWhere((p) => p.id == nova.id);
+    if (indeks == -1) return const Neuspeh(NijePronadjeno());
+    final trenutna = _prijave[indeks];
+    if (trenutna.stanje.runtimeType != iz.runtimeType) {
+      return Neuspeh(NedozvoljenPrelaz(iz: trenutna.stanje, u: nova.stanje));
+    }
+    _prijave[indeks] = nova;
+    return Uspeh(nova);
+  }
+
+  @override
+  Future<Rezultat<List<Prijava>>> potvrdiMesto(Prijava potvrdjena, {required List<Prijava> povucene}) async {
+    for (final prijava in [potvrdjena, ...povucene]) {
       _prijave
         ..removeWhere((p) => p.id == prijava.id)
         ..add(prijava);
     }
+    return Uspeh([potvrdjena, ...povucene]);
   }
 
   @override

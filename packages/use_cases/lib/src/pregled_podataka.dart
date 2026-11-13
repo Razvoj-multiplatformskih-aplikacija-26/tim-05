@@ -6,7 +6,8 @@ final class PregledPodataka extends Equatable {
     required this.student,
     required this.univerziteti,
     required this.ponude,
-    required this.svePrijave,
+    required this.prijaveStudenta,
+    required this.zauzetaMesta,
     required this.sacuvane,
     required this.sada,
   });
@@ -15,13 +16,15 @@ final class PregledPodataka extends Equatable {
   final List<Univerzitet> univerziteti;
   final List<Ponuda> ponude;
 
-  final List<Prijava> svePrijave;
+  final List<Prijava> prijaveStudenta;
+
+  final Map<IdPonude, int> zauzetaMesta;
   final Set<IdPonude> sacuvane;
 
   final DateTime sada;
 
   List<Prijava> get mojePrijave => [
-    for (final p in svePrijave)
+    for (final p in prijaveStudenta)
       if (p.idStudenta == student.id) p,
   ]..sort((a, b) => b.napravljena.compareTo(a.napravljena));
 
@@ -29,7 +32,7 @@ final class PregledPodataka extends Equatable {
 
   Ponuda? ponuda(IdPonude id) => ponude.where((p) => p.id == id).firstOrNull;
 
-  Prijava? prijava(IdPrijave id) => svePrijave.where((p) => p.id == id).firstOrNull;
+  Prijava? prijava(IdPrijave id) => prijaveStudenta.where((p) => p.id == id).firstOrNull;
 
   Prijava? mojaPrijavaZa(IdPonude idPonude) => nezavrsenaPrijava(student.id, idPonude, mojePrijave);
 
@@ -37,17 +40,17 @@ final class PregledPodataka extends Equatable {
 
   List<Ponuda> get sacuvanePonude => [for (final id in sacuvane) ?ponuda(id)];
 
-  int slobodnaMesta(Ponuda ponuda) => preostalaMesta(ponuda, svePrijave);
+  int slobodnaMesta(Ponuda ponuda) => slobodnaMestaZa(ponuda, zauzeto: zauzetaMesta[ponuda.id] ?? 0);
 
-  int get brojAktivnih => aktivnePrijave(student.id, svePrijave).length;
+  int get brojAktivnih => aktivnePrijave(student.id, prijaveStudenta).length;
 
   ProveraUslova uslovi(Ponuda ponuda) => ProveraUslova(
     jezik: imaJezik(student, ponuda),
     prosek: imaProsek(student, ponuda),
     rok: rokNijeIstekao(ponuda, sada),
-    mestoZaPrijavu: imaMestaZaNovuPrijavu(student, svePrijave),
+    mestoZaPrijavu: imaMestaZaNovuPrijavu(student, prijaveStudenta),
     brojAktivnih: brojAktivnih,
-    ishod: proveriUslove(student: student, ponuda: ponuda, svePrijave: svePrijave, sada: sada, ponude: ponude),
+    ishod: proveriUslove(student: student, ponuda: ponuda, svePrijave: prijaveStudenta, sada: sada, ponude: ponude),
   );
 
   bool jeNova(Ponuda ponuda) => sada.difference(ponuda.objavljena).inDays < 7;
@@ -60,7 +63,7 @@ final class PregledPodataka extends Equatable {
       prijava.stanje is! Prihvacena && dozvoljenPrelaz(prijava.stanje, Povucena(kada: sada));
 
   @override
-  List<Object?> get props => [student, univerziteti, ponude, svePrijave, sacuvane, sada];
+  List<Object?> get props => [student, univerziteti, ponude, prijaveStudenta, zauzetaMesta, sacuvane, sada];
 }
 
 final class ProveraUslova {

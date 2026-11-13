@@ -3,9 +3,8 @@ import 'package:domain/domain.dart';
 import 'ports/ponuda_repository.dart';
 import 'ports/prijava_repository.dart';
 import 'ports/student_repository.dart';
+import 'promena_stanja.dart';
 import 'sat.dart';
-
-Prijava? _nadji(List<Prijava> prijave, IdPrijave id) => prijave.where((p) => p.id == id).firstOrNull;
 
 Ponuda? _ponuda(List<Ponuda> ponude, IdPonude id) => ponude.where((p) => p.id == id).firstOrNull;
 
@@ -25,69 +24,71 @@ final class SacuvajPrijavu {
     String? napomena,
     bool posalji = false,
   }) async {
-    final sve = await prijave.svePrijave();
-    final sada = sat.sada();
-
-    final Prijava prijava;
     if (idPrijave != null) {
-      final postojeca = _nadji(sve, idPrijave);
-      if (postojeca == null) return const Neuspeh(NijePronadjeno());
-      final izmena = izmeniPrijavu(postojeca, ko: ko, motivacionoPismo: pismo, napomena: napomena);
-      if (izmena case Neuspeh(:final greska)) return Neuspeh(greska);
-      prijava = izmena.vrednostIliNull!;
-    } else if (idPonude != null) {
-      final nova = napraviPrijavu(
-        id: IdPrijave('p-${sada.microsecondsSinceEpoch}'),
-        ko: ko,
-        idPonude: idPonude,
-        motivacionoPismo: pismo,
-        napomena: napomena,
-        svePrijave: sve,
-        sada: sada,
+      return promeniPrijavu(
+        prijave,
+        idPrijave,
+        promena: (postojeca) async {
+          if (!await smeDaVidi(ko, postojeca, ponude)) return const Neuspeh(NijePronadjeno());
+          final izmena = izmeniPrijavu(postojeca, ko: ko, motivacionoPismo: pismo, napomena: napomena);
+          if (izmena case Neuspeh(:final greska)) return Neuspeh(greska);
+          final izmenjena = izmena.vrednostIliNull!;
+          return posalji ? _posalji(izmenjena, ko: ko, svePonude: await ponude.ponude()) : Uspeh(izmenjena);
+        },
       );
-      if (nova case Neuspeh(:final greska)) return Neuspeh(greska);
-      prijava = nova.vrednostIliNull!;
-    } else {
-      return const Neuspeh(NijePronadjeno());
     }
+    if (idPonude == null) return const Neuspeh(NijePronadjeno());
 
-    var zaCuvanje = prijava;
+    final sada = sat.sada();
+    final nova = napraviPrijavu(
+      id: IdPrijave('p-${sada.microsecondsSinceEpoch}'),
+      ko: ko,
+      idPonude: idPonude,
+      motivacionoPismo: pismo,
+      napomena: napomena,
+      svePrijave: await prijave.prijaveStudenta(ko.id),
+      sada: sada,
+    );
+    if (nova case Neuspeh(:final greska)) return Neuspeh(greska);
+    var zaUpis = nova.vrednostIliNull!;
     if (posalji) {
-      final svePonude = await ponude.ponude();
-      final ponuda = _ponuda(svePonude, prijava.idPonude);
-      if (ponuda == null) return const Neuspeh(NijePronadjeno());
-      final student = await studenti.student(ko.id);
-      final slanje = posaljiPrijavu(
-        prijava,
-        ko: ko,
-        student: student,
-        ponuda: ponuda,
-        svePrijave: sve,
-        sada: sada,
-        ponude: svePonude,
-      );
+      final slanje = await _posalji(zaUpis, ko: ko, svePonude: await ponude.ponude());
       if (slanje case Neuspeh(:final greska)) return Neuspeh(greska);
-      zaCuvanje = slanje.vrednostIliNull!;
+      zaUpis = slanje.vrednostIliNull!;
     }
+    return prijave.napravi(zaUpis);
+  }
 
-    await prijave.sacuvaj([zaCuvanje]);
-    return Uspeh(zaCuvanje);
+  Future<Rezultat<Prijava>> _posalji(Prijava prijava, {required Korisnik ko, required List<Ponuda> svePonude}) async {
+    final ponuda = _ponuda(svePonude, prijava.idPonude);
+    if (ponuda == null) return const Neuspeh(NijePronadjeno());
+    return posaljiPrijavu(
+      prijava,
+      ko: ko,
+      student: await studenti.student(ko.id),
+      ponuda: ponuda,
+      svePrijave: await prijave.prijaveStudenta(ko.id),
+      sada: sat.sada(),
+      ponude: svePonude,
+    );
   }
 }
 
 final class PovuciPrijavu {
-  const PovuciPrijavu({required this.prijave, required this.sat});
+  const PovuciPrijavu({required this.ponude, required this.prijave, required this.sat});
 
+  final PonudaRepository ponude;
   final PrijavaRepository prijave;
   final Sat sat;
 
-  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) async {
-    final prijava = _nadji(await prijave.svePrijave(), id);
-    if (prijava == null) return const Neuspeh(NijePronadjeno());
-    final rezultat = povuciPrijavu(prijava, ko: ko, sada: sat.sada());
-    if (rezultat case Uspeh(:final vrednost)) await prijave.sacuvaj([vrednost]);
-    return rezultat;
-  }
+  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) => promeniPrijavu(
+    prijave,
+    id,
+    promena: (prijava) async {
+      if (!await smeDaVidi(ko, prijava, ponude)) return const Neuspeh(NijePronadjeno());
+      return povuciPrijavu(prijava, ko: ko, sada: sat.sada());
+    },
+  );
 }
 
 final class PotvrdiMesto {
@@ -98,48 +99,55 @@ final class PotvrdiMesto {
   final Sat sat;
 
   Future<Rezultat<List<Prijava>>> call({required Korisnik ko, required IdPrijave id}) async {
-    final sve = await prijave.svePrijave();
-    final prijava = _nadji(sve, id);
+    final prijava = await prijave.prijava(id);
     if (prijava == null) return const Neuspeh(NijePronadjeno());
     final svePonude = await ponude.ponude();
-    final ponuda = _ponuda(svePonude, prijava.idPonude);
-    if (ponuda == null) return const Neuspeh(NijePronadjeno());
+    final vidljiva = vidljivaPonuda(ko, prijava, svePonude);
+    if (vidljiva case Neuspeh(:final greska)) return Neuspeh(greska);
+    final ponuda = vidljiva.vrednostIliNull!;
     final rezultat = potvrdiMesto(
       prijava,
       ko: ko,
       ponuda: ponuda,
       ponude: svePonude,
-      svePrijave: sve,
+      svePrijave: await prijave.prijaveStudenta(prijava.idStudenta),
       sada: sat.sada(),
     );
-    if (rezultat case Uspeh(:final vrednost)) await prijave.sacuvaj(vrednost);
-    return rezultat;
+    return switch (rezultat) {
+      Uspeh(vrednost: [final potvrdjena, ...final povucene]) => prijave.potvrdiMesto(potvrdjena, povucene: povucene),
+      Uspeh() => const Neuspeh(NijePronadjeno()),
+      Neuspeh(:final greska) => Neuspeh(greska),
+    };
   }
 }
 
 final class OdbijMesto {
-  const OdbijMesto({required this.prijave, required this.sat});
+  const OdbijMesto({required this.ponude, required this.prijave, required this.sat});
 
+  final PonudaRepository ponude;
   final PrijavaRepository prijave;
   final Sat sat;
 
-  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) async {
-    final prijava = _nadji(await prijave.svePrijave(), id);
-    if (prijava == null) return const Neuspeh(NijePronadjeno());
-    final rezultat = odbijMesto(prijava, ko: ko, sada: sat.sada());
-    if (rezultat case Uspeh(:final vrednost)) await prijave.sacuvaj([vrednost]);
-    return rezultat;
-  }
+  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) => promeniPrijavu(
+    prijave,
+    id,
+    promena: (prijava) async {
+      if (!await smeDaVidi(ko, prijava, ponude)) return const Neuspeh(NijePronadjeno());
+      return odbijMesto(prijava, ko: ko, sada: sat.sada());
+    },
+  );
 }
 
 final class ObrisiPrijavu {
-  const ObrisiPrijavu({required this.prijave});
+  const ObrisiPrijavu({required this.ponude, required this.prijave});
 
+  final PonudaRepository ponude;
   final PrijavaRepository prijave;
 
   Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) async {
-    final prijava = _nadji(await prijave.svePrijave(), id);
+    final prijava = await prijave.prijava(id);
     if (prijava == null) return const Neuspeh(NijePronadjeno());
+    if (!await smeDaVidi(ko, prijava, ponude)) return const Neuspeh(NijePronadjeno());
     final rezultat = obrisiPrijavu(prijava, ko: ko);
     if (rezultat case Uspeh()) await prijave.obrisi(id);
     return rezultat;

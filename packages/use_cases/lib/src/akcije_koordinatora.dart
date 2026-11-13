@@ -2,11 +2,8 @@ import 'package:domain/domain.dart';
 
 import 'ports/ponuda_repository.dart';
 import 'ports/prijava_repository.dart';
+import 'promena_stanja.dart';
 import 'sat.dart';
-
-Prijava? _nadji(List<Prijava> prijave, IdPrijave id) => prijave.where((p) => p.id == id).firstOrNull;
-
-Ponuda? _ponuda(List<Ponuda> ponude, IdPonude id) => ponude.where((p) => p.id == id).firstOrNull;
 
 final class PrihvatiPrijavu {
   const PrihvatiPrijavu({required this.ponude, required this.prijave, required this.sat});
@@ -15,22 +12,22 @@ final class PrihvatiPrijavu {
   final PrijavaRepository prijave;
   final Sat sat;
 
-  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) async {
-    final sve = await prijave.svePrijave();
-    final prijava = _nadji(sve, id);
-
-    if (prijava == null) return const Neuspeh(NijePronadjeno());
-
-    final ponuda = _ponuda(await ponude.ponude(), prijava.idPonude);
-
-    if (ponuda == null) return const Neuspeh(NijePronadjeno());
-
-    final rezultat = prihvatiPrijavu(prijava, ko: ko, ponuda: ponuda, svePrijave: sve, sada: sat.sada());
-
-    if (rezultat case Uspeh(:final vrednost)) await prijave.sacuvaj([vrednost]);
-
-    return rezultat;
-  }
+  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) => promeniPrijavu(
+    prijave,
+    id,
+    promena: (prijava) async {
+      final vidljiva = vidljivaPonuda(ko, prijava, await ponude.ponude());
+      if (vidljiva case Neuspeh(:final greska)) return Neuspeh(greska);
+      final ponuda = vidljiva.vrednostIliNull!;
+      return prihvatiPrijavu(
+        prijava,
+        ko: ko,
+        ponuda: ponuda,
+        svePrijave: await prijave.prijaveNaPonudeUniverziteta(ponuda.idUniverziteta),
+        sada: sat.sada(),
+      );
+    },
+  );
 }
 
 final class StaviNaListuCekanja {
@@ -40,21 +37,15 @@ final class StaviNaListuCekanja {
   final PrijavaRepository prijave;
   final Sat sat;
 
-  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) async {
-    final prijava = _nadji(await prijave.svePrijave(), id);
-
-    if (prijava == null) return const Neuspeh(NijePronadjeno());
-
-    final ponuda = _ponuda(await ponude.ponude(), prijava.idPonude);
-
-    if (ponuda == null) return const Neuspeh(NijePronadjeno());
-
-    final rezultat = staviNaListuCekanja(prijava, ko: ko, ponuda: ponuda, sada: sat.sada());
-
-    if (rezultat case Uspeh(:final vrednost)) await prijave.sacuvaj([vrednost]);
-
-    return rezultat;
-  }
+  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id}) => promeniPrijavu(
+    prijave,
+    id,
+    promena: (prijava) async {
+      final vidljiva = vidljivaPonuda(ko, prijava, await ponude.ponude());
+      if (vidljiva case Neuspeh(:final greska)) return Neuspeh(greska);
+      return staviNaListuCekanja(prijava, ko: ko, ponuda: vidljiva.vrednostIliNull!, sada: sat.sada());
+    },
+  );
 }
 
 final class OdbijPrijavu {
@@ -64,19 +55,14 @@ final class OdbijPrijavu {
   final PrijavaRepository prijave;
   final Sat sat;
 
-  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id, required String razlog}) async {
-    final prijava = _nadji(await prijave.svePrijave(), id);
-
-    if (prijava == null) return const Neuspeh(NijePronadjeno());
-
-    final ponuda = _ponuda(await ponude.ponude(), prijava.idPonude);
-
-    if (ponuda == null) return const Neuspeh(NijePronadjeno());
-
-    final rezultat = odbijPrijavu(prijava, ko: ko, ponuda: ponuda, razlog: razlog, sada: sat.sada());
-
-    if (rezultat case Uspeh(:final vrednost)) await prijave.sacuvaj([vrednost]);
-
-    return rezultat;
-  }
+  Future<Rezultat<Prijava>> call({required Korisnik ko, required IdPrijave id, required String razlog}) =>
+      promeniPrijavu(
+        prijave,
+        id,
+        promena: (prijava) async {
+          final vidljiva = vidljivaPonuda(ko, prijava, await ponude.ponude());
+          if (vidljiva case Neuspeh(:final greska)) return Neuspeh(greska);
+          return odbijPrijavu(prijava, ko: ko, ponuda: vidljiva.vrednostIliNull!, razlog: razlog, sada: sat.sada());
+        },
+      );
 }
