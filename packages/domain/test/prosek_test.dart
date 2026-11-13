@@ -41,4 +41,21 @@ void main() {
       expect(Prosek.proveri('-Infinity').greskaIliNull, isA<ProsekVanOpsega>());
     });
   });
+
+
+  
+  group('Prosek.proveriBroj (prosek koji stize kao broj, npr. sa mrese)', () {
+    test('isto pravilo kao za unos: granice 6 i 10 dozvoljene, van njih nije', () {
+      expect(Prosek.proveriBroj(8.74).vrednostIliNull, 8.74);
+      expect(Prosek.proveriBroj(6).jeUspeh, isTrue);
+      expect(Prosek.proveriBroj(10).jeUspeh, isTrue);
+      expect(Prosek.proveriBroj(5.99).greskaIliNull, isA<ProsekVanOpsega>());
+      expect(Prosek.proveriBroj(10.01).greskaIliNull, isA<ProsekVanOpsega>());
+    });
+
+    test('NaN nije broj', () {
+      expect(Prosek.proveriBroj(double.nan).greskaIliNull, isA<ProsekNijeBroj>());
+    });
+  });
+
 }

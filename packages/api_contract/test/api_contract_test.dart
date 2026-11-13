@@ -84,7 +84,7 @@ void main() {
   });
 
   group('greška sa servera', () {
-    test('Problem Details nosi tip, status i kôd', () {
+    test('Problem Details nosi tip, status i kod', () {
       const problem = ProblemDto(status: 401, code: KodoviGresaka.sesijaIstekla, title: 'Session expired');
 
       expect(problem.toJson(), {
