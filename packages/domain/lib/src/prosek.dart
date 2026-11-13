@@ -8,6 +8,11 @@ abstract final class Prosek {
   static Rezultat<double> proveri(String unos) {
     final broj = double.tryParse(unos.trim().replaceAll(',', '.'));
     if (broj == null || broj.isNaN) return const Neuspeh(ProsekNijeBroj());
+    return proveriBroj(broj);
+  }
+
+  static Rezultat<double> proveriBroj(double broj) {
+    if (broj.isNaN) return const Neuspeh(ProsekNijeBroj());
     if (broj < najmanje || broj > najvise) return const Neuspeh(ProsekVanOpsega());
     return Uspeh(broj);
   }

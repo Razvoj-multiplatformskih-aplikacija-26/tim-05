@@ -128,7 +128,7 @@ void main() {
         ko: koordinatorBec,
         id: const IdPrijave('p-1'),
       );
-      expect(rezultat.greskaIliNull, isA<NemaPravo>());
+      expect(rezultat.greskaIliNull, isA<NijePronadjeno>());
       expect(baza.prijave.single.stanje, isA<Poslata>());
     });
 

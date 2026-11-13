@@ -1,4 +1,5 @@
 import 'package:domain/domain.dart';
+import 'package:domain/domain.dart' as domen;
 import 'package:use_cases/use_cases.dart';
 
 final class TestBaza implements PonudaRepository, PrijavaRepository, StudentRepository {
@@ -13,6 +14,8 @@ final class TestBaza implements PonudaRepository, PrijavaRepository, StudentRepo
 
   bool greskaSledecegZahteva = false;
 
+  void Function(TestBaza baza)? preSledecegUpisa;
+
   void _proveri() {
     if (greskaSledecegZahteva) {
       greskaSledecegZahteva = false;
@@ -21,6 +24,8 @@ final class TestBaza implements PonudaRepository, PrijavaRepository, StudentRepo
   }
 
   List<Prijava> get prijave => List.unmodifiable(_prijave);
+
+  void postavi(Prijava prijava) => _prijave[_prijave.indexWhere((p) => p.id == prijava.id)] = prijava;
 
   @override
   Future<List<Ponuda>> ponude() async {
@@ -43,22 +48,77 @@ final class TestBaza implements PonudaRepository, PrijavaRepository, StudentRepo
   }
 
   @override
-  Future<List<Prijava>> svePrijave() async {
+  Future<Map<IdPonude, int>> zauzetaMesta() async {
     _proveri();
-    return List.of(_prijave);
+    return {for (final ponuda in _ponude) ponuda.id: domen.zauzetaMesta(ponuda, _prijave)};
   }
 
   @override
-  Future<void> sacuvaj(List<Prijava> prijave) async {
+  Future<Prijava?> prijava(IdPrijave id) async {
     _proveri();
-    for (final prijava in prijave) {
-      final indeks = _prijave.indexWhere((p) => p.id == prijava.id);
-      if (indeks == -1) {
-        _prijave.add(prijava);
-      } else {
-        _prijave[indeks] = prijava;
-      }
+    return _prijave.where((p) => p.id == id).firstOrNull;
+  }
+
+  @override
+  Future<List<Prijava>> prijaveStudenta(IdKorisnika idStudenta) async {
+    _proveri();
+    return [
+      for (final p in _prijave)
+        if (p.idStudenta == idStudenta) p,
+    ];
+  }
+
+  @override
+  Future<List<Prijava>> prijaveNaPonudeUniverziteta(IdUniverziteta idUniverziteta) async {
+    _proveri();
+    final ponude = {
+      for (final ponuda in _ponude)
+        if (ponuda.idUniverziteta == idUniverziteta) ponuda.id,
+    };
+    return [
+      for (final p in _prijave)
+        if (ponude.contains(p.idPonude) && p.stanje is! UPripremi) p,
+    ];
+  }
+
+  @override
+  Future<Rezultat<Prijava>> napravi(Prijava nova) async {
+    _proveri();
+    _prijave.add(nova);
+    return Uspeh(nova);
+  }
+
+  @override
+  Future<Rezultat<Prijava>> sacuvaj(Prijava nova, {required StanjePrijave iz}) async {
+    _proveri();
+    _preUpisa();
+    final indeks = _prijave.indexWhere((p) => p.id == nova.id);
+    if (indeks == -1) return const Neuspeh(NijePronadjeno());
+    final trenutna = _prijave[indeks];
+    if (trenutna.stanje.runtimeType != iz.runtimeType) {
+      return Neuspeh(NedozvoljenPrelaz(iz: trenutna.stanje, u: nova.stanje));
     }
+    _prijave[indeks] = nova;
+    return Uspeh(nova);
+  }
+
+  @override
+  Future<Rezultat<List<Prijava>>> potvrdiMesto(Prijava potvrdjena, {required List<Prijava> povucene}) async {
+    _proveri();
+    _preUpisa();
+    final trenutna = _prijave.where((p) => p.id == potvrdjena.id).firstOrNull;
+    if (trenutna == null) return const Neuspeh(NijePronadjeno());
+    if (trenutna.stanje is! Prihvacena) return Neuspeh(NedozvoljenPrelaz(iz: trenutna.stanje, u: potvrdjena.stanje));
+    for (final prijava in [potvrdjena, ...povucene]) {
+      postavi(prijava);
+    }
+    return Uspeh([potvrdjena, ...povucene]);
+  }
+
+  void _preUpisa() {
+    final akcija = preSledecegUpisa;
+    preSledecegUpisa = null;
+    akcija?.call(this);
   }
 
   @override

@@ -15,10 +15,10 @@ final class ZavisnostiAplikacije {
     this.laznaBaza,
   }) : ucitajPregled = UcitajPregled(ponude: ponude, prijave: prijave, studenti: studenti, sat: sat),
        sacuvajPrijavu = SacuvajPrijavu(ponude: ponude, prijave: prijave, studenti: studenti, sat: sat),
-       povuciPrijavu = PovuciPrijavu(prijave: prijave, sat: sat),
+       povuciPrijavu = PovuciPrijavu(ponude: ponude, prijave: prijave, sat: sat),
        potvrdiMesto = PotvrdiMesto(ponude: ponude, prijave: prijave, sat: sat),
-       odbijMesto = OdbijMesto(prijave: prijave, sat: sat),
-       obrisiPrijavu = ObrisiPrijavu(prijave: prijave),
+       odbijMesto = OdbijMesto(ponude: ponude, prijave: prijave, sat: sat),
+       obrisiPrijavu = ObrisiPrijavu(ponude: ponude, prijave: prijave),
        promeniSacuvanu = PromeniSacuvanu(studenti: studenti),
        sacuvajProfil = SacuvajProfil(studenti: studenti);
 

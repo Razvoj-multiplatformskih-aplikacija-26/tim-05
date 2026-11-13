@@ -9,10 +9,10 @@ import 'test_baza.dart';
 
 ProfilBloc napravi(TestBaza baza) => ProfilBloc(
   ucitajPregled: ucitajPregled(baza),
-  povuciPrijavu: PovuciPrijavu(prijave: baza, sat: sat),
+  povuciPrijavu: PovuciPrijavu(ponude: baza, prijave: baza, sat: sat),
   potvrdiMesto: PotvrdiMesto(ponude: baza, prijave: baza, sat: sat),
-  odbijMesto: OdbijMesto(prijave: baza, sat: sat),
-  obrisiPrijavu: ObrisiPrijavu(prijave: baza),
+  odbijMesto: OdbijMesto(ponude: baza, prijave: baza, sat: sat),
+  obrisiPrijavu: ObrisiPrijavu(ponude: baza, prijave: baza),
   sacuvajProfil: SacuvajProfil(studenti: baza),
   korisnik: andrej,
 );

@@ -38,10 +38,25 @@ final class _BazaBezPrijava implements PonudaRepository, PrijavaRepository, Stud
   Future<List<Univerzitet>> univerziteti() async => pocetniUniverziteti;
 
   @override
-  Future<List<Prijava>> svePrijave() async => const [];
+  Future<Map<IdPonude, int>> zauzetaMesta() async => const {};
 
   @override
-  Future<void> sacuvaj(List<Prijava> prijave) async {}
+  Future<Prijava?> prijava(IdPrijave id) async => null;
+
+  @override
+  Future<List<Prijava>> prijaveStudenta(IdKorisnika idStudenta) async => const [];
+
+  @override
+  Future<List<Prijava>> prijaveNaPonudeUniverziteta(IdUniverziteta idUniverziteta) async => const [];
+
+  @override
+  Future<Rezultat<Prijava>> napravi(Prijava nova) async => Uspeh(nova);
+
+  @override
+  Future<Rezultat<Prijava>> sacuvaj(Prijava nova, {required StanjePrijave iz}) async => const Neuspeh(NijePronadjeno());
+
+  @override
+  Future<Rezultat<List<Prijava>>> potvrdiMesto(Prijava potvrdjena, {required List<Prijava> povucene}) async => const Neuspeh(NijePronadjeno());
 
   @override
   Future<void> obrisi(IdPrijave id) async {}
