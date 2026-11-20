@@ -8,12 +8,14 @@ workspace:
   - packages/domain
   - packages/api_contract
   - packages/api_mapping
+  - packages/use_cases
   - apps/server
 EOF
 COPY pubspec.lock ./
 COPY packages/domain packages/domain
 COPY packages/api_contract packages/api_contract
 COPY packages/api_mapping packages/api_mapping
+COPY packages/use_cases packages/use_cases
 COPY apps/server apps/server
 RUN dart pub get
 RUN dart compile exe apps/server/bin/server.dart -o /server

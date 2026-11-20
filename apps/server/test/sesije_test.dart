@@ -11,6 +11,7 @@ import 'package:postgres/postgres.dart';
 import 'package:relic/relic.dart' show IOAdapter, RelicServer;
 import 'package:server/server.dart';
 import 'package:test/test.dart';
+import 'package:use_cases/use_cases.dart';
 
 late Pool<void> baza;
 late RelicServer server;
@@ -39,7 +40,6 @@ Map<String, String> bearer(String token) => {'Authorization': 'Bearer $token'};
 
 String kodIz(http.Response odgovor) => (jsonDecode(odgovor.body) as Map<String, Object?>)['code']! as String;
 
-/// Ista migracija kao u `compose.yaml`, ali nad posebnom bazom `erasmus_test`, da testovi ne diraju demo podatke.
 Future<void> migrirajDbmate(Uri adresaBaze) async {
   final uCompose = adresaBaze.replace(host: 'db', port: 5432, path: '/erasmus_test');
   final rezultat = await Process.run('docker', [
@@ -67,8 +67,13 @@ void main() {
     await upisiPocetnePodatke(baza, sada: DateTime.now(), demoLozinka: demoLozinka);
     final sesije = RukovaociSesija(nalozi: SkladisteNaloga(baza), tajna: tajna, trajanje: trajanje);
     server = RelicServer(() => IOAdapter.bind(InternetAddress.loopbackIPv4, port: 0));
-    await server.mountAndStart(napraviHandler(sesije, dozvoljenaPorekla: const [dozvoljenoPoreklo]));
-    adresa = Uri.parse('http://localhost:${server.port}');
+    await server.mountAndStart(
+      napraviHandler(
+        sesije,
+        erasmus: RukovaociErasmusa(skladiste: PostgresErasmus(baza), sat: const SistemskiSat()),
+        dozvoljenaPorekla: const [dozvoljenoPoreklo],
+      ),
+    );    adresa = Uri.parse('http://localhost:${server.port}');
   });
 
   tearDownAll(() async {

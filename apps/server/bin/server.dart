@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:postgres/postgres.dart';
 import 'package:relic/relic.dart' show IOAdapter, RelicServer;
 import 'package:server/server.dart';
+import 'package:use_cases/use_cases.dart';
 
 Future<void> main() async {
   final konfiguracija = KonfiguracijaServera.izOkruzenja(serverEnvironment());
@@ -15,8 +16,11 @@ Future<void> main() async {
     trajanje: konfiguracija.trajanjeSesije,
     bezbedanKolacic: konfiguracija.bezbedanKolacic,
   );
+  final erasmus = RukovaociErasmusa(skladiste: PostgresErasmus(baza), sat: const SistemskiSat());
   final server = RelicServer(() => IOAdapter.bind(InternetAddress(konfiguracija.host), port: konfiguracija.port));
-  await server.mountAndStart(napraviHandler(sesije, dozvoljenaPorekla: konfiguracija.dozvoljenaPorekla));
+  await server.mountAndStart(
+    napraviHandler(sesije, erasmus: erasmus, dozvoljenaPorekla: konfiguracija.dozvoljenaPorekla),
+  );
   stdout.writeln('ErasmusGo server na http://${konfiguracija.host}:${konfiguracija.port}');
   await _signalZaKraj();
   await server.close();

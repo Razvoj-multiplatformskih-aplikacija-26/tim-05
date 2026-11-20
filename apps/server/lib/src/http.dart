@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:api_contract/api_contract.dart';
+import 'package:api_mapping/api_mapping.dart';
+import 'package:domain/domain.dart';
 import 'package:relic/relic.dart';
 
 final _mimeProblema = MimeType.parse(ProblemDto.mediaType);
@@ -11,6 +13,8 @@ Response json(int status, Object? telo) =>
 
 Response odgovorSaProblemom(ProblemDto problem) =>
     Response(problem.status, body: Body.fromString(jsonEncode(problem.toJson()), mimeType: _mimeProblema));
+
+Response problem(GreskaDomena greska) => odgovorSaProblemom(greska.toProblem());
 
 Response losZahtev(String naslov) =>
     odgovorSaProblemom(ProblemDto(status: 400, code: KodoviGresaka.losZahtev, title: naslov));

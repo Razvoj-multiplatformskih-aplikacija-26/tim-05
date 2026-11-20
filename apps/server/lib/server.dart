@@ -3,5 +3,7 @@ export 'src/env_file.dart';
 export 'src/konfiguracija.dart';
 export 'src/nalozi.dart';
 export 'src/pocetni_podaci.dart';
+export 'src/postgres_erasmus.dart';
+export 'src/rukovaoci_erasmusa.dart';
 export 'src/seme.dart';
 export 'src/sesije.dart';
