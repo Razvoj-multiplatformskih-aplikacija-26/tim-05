@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui/ui.dart';
+import 'package:use_cases/use_cases.dart';
 
+import '../widgeti/potrebna_prijava.dart';
 import '../widgeti/zaglavlje.dart';
+
 
 class UrediProfilEkran extends StatelessWidget {
   const UrediProfilEkran({super.key});
@@ -17,8 +20,11 @@ class UrediProfilEkran extends StatelessWidget {
       buildWhen: (pre, sad) => pre.runtimeType != sad.runtimeType,
       builder: (context, stanje) => switch (stanje) {
         ProfilUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
-        ProfilGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const ProfilZatrazen()))),
-        ProfilSaPodacima(:final podaci) => _Forma(pocetni: podaci.student),
+        ProfilGreska(:final uzrok) => EkranStanja(
+          child: PrikazGreske(uzrok: uzrok, onPonovo: () => bloc.add(const ProfilZatrazen())),
+        ),
+        ProfilSaPodacima(podaci: PregledPodataka(:final student?)) => _Forma(pocetni: student),
+        ProfilSaPodacima() || ProfilBezPrijave() => const PotrebnaPrijava(),
       },
     );
   }
@@ -89,11 +95,12 @@ class _FormaState extends State<_Forma> {
 
   void _reaguj(BuildContext context, ProfilStanje stanje) {
     final obavestenje = stanje is ProfilSaPodacima ? stanje.obavestenje : null;
-    final poruka = switch (obavestenje) {
-      ProfilSacuvan() => 'Profil je sačuvan.',
-      AkcijaOdbijena(:final greska) => greska.poruka,
-      _ => 'Profil nije sačuvan. Proverite vezu i pokušajte ponovo.',
-    };
+     final poruka = switch (obavestenje) {
+        ProfilSacuvan() => 'Profil je sačuvan.',
+        AkcijaOdbijena(:final greska) => greska.poruka,
+        AkcijaNeuspela(:final uzrok) => 'Profil nije sačuvan. ${porukaKvara(uzrok)}',
+        _ => 'Profil nije sačuvan.',
+      };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(poruka)));
     context.read<ProfilBloc>().add(const ObavestenjeProfilaProcitano());
     if (obavestenje is ProfilSacuvan) {

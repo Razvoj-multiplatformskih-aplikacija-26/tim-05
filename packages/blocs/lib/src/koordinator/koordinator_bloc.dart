@@ -95,7 +95,6 @@ final class KoordinatorBloc extends Bloc<KoordinatorDogadjaj, KoordinatorStanje>
   Future<void> _ucitaj(Emitter<KoordinatorStanje> emit, {KoordinatorObavestenje? obavestenje}) async {
     try {
       final podaci = await ucitajPregled(korisnik);
-      // Stanje se čita posle čekanja: kursor ili izbor su mogli da se promene dok su podaci stizali.
       final pre = switch (state) {
         final KoordinatorUcitano ucitano => ucitano,
         _ => null,
@@ -110,7 +109,6 @@ final class KoordinatorBloc extends Bloc<KoordinatorDogadjaj, KoordinatorStanje>
         filteri: pre?.filteri ?? const FilteriPrijava(),
         obavestenje: obavestenje,
       );
-      // Izbor ostaje samo ako ta prijava i dalje postoji i vidi se uz filtere.
       final izabrana = pre?.izabrana;
       emit(
         ucitano.copyWith(
@@ -123,8 +121,6 @@ final class KoordinatorBloc extends Bloc<KoordinatorDogadjaj, KoordinatorStanje>
     }
   }
 
-  /// Zajednički tok svake odluke (Vežbe 4, „Akcija i jednokratni efekti"): stanje kaže da akcija traje,
-  /// poziva se slučaj korišćenja, pa se podaci ponovo učitaju uz poruku, ili ostaju isti uz razlog neuspeha.
   Future<void> _izvrsi(
     Emitter<KoordinatorStanje> emit,
     IdPrijave id,
@@ -138,22 +134,19 @@ final class KoordinatorBloc extends Bloc<KoordinatorDogadjaj, KoordinatorStanje>
         case Uspeh(:final vrednost):
           await _ucitaj(emit, obavestenje: OdlukaSacuvana(vrednost));
         case Neuspeh(:final greska):
-          _zavrsi(emit, OdlukaOdbijena(greska));
+          await _ucitaj(emit, obavestenje: OdlukaOdbijena(greska));
       }
     } on Exception catch (uzrok) {
       _zavrsi(emit, OdlukaNeuspela(uzrok));
     }
   }
 
-  /// Isti podaci, bez akcije u toku, sa porukom o neuspehu.
   void _zavrsi(Emitter<KoordinatorStanje> emit, KoordinatorObavestenje obavestenje) {
     if (state case final KoordinatorUcitano trenutno) {
       emit(trenutno.copyWith(uToku: () => null, obavestenje: () => obavestenje));
     }
   }
 
-  /// Za svaku prijavu „proba" svaku odluku funkcijom iz domena; ekran prikazuje samo dozvoljene.
-  /// Pravila se ne pišu ponovo: ovo je isti poziv kao u slučaju korišćenja, bez čuvanja.
   Map<IdPrijave, Set<AkcijaKoordinatora>> _akcijeZa(PregledKoordinatora podaci) => {
     for (final prijava in podaci.prijave)
       prijava.id: {

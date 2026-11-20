@@ -5,6 +5,7 @@ export 'src/tekst/format.dart';
 export 'src/tekst/poruke_gresaka.dart';
 export 'src/tekst/poruke_kvara.dart';
 export 'src/tema/tema.dart';
+export 'src/widgeti/ekran_prijavljivanja.dart';
 export 'src/widgeti/logo.dart';
 export 'src/widgeti/oznaka_stanja.dart';
 export 'src/widgeti/prikazi_stanja.dart';

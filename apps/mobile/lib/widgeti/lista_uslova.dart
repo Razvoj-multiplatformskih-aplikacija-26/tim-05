@@ -56,20 +56,48 @@ class ListaUslova extends StatelessWidget {
   }
 }
 
+class UsloviBezPrijave extends StatelessWidget {
+  const UsloviBezPrijave({super.key, required this.ponuda, required this.sada});
+
+  final Ponuda ponuda;
+  final DateTime sada;
+
+  @override
+  Widget build(BuildContext context) {
+    final rokOtvoren = rokNijeIstekao(ponuda, sada);
+    return Card(
+      child: Column(
+        children: [
+          _Uslov(
+            ikona: Icons.translate,
+            naslov: 'Jezik',
+            vrednost: '${opisZahtevaJezika(ponuda.zahtevJezika)} ili više',
+          ),
+          const Divider(indent: 14, endIndent: 14),
+          _Uslov(ikona: Icons.bar_chart, naslov: 'Minimalni prosek', vrednost: formatProsek(ponuda.minimalniProsek)),
+          const Divider(indent: 14, endIndent: 14),
+          _Uslov(
+            ikona: Icons.event_outlined,
+            naslov: 'Rok za prijavu',
+            vrednost: formatDatum(ponuda.rok),
+            ispunjen: rokOtvoren,
+            oznaka: rokOtvoren ? 'Otvoreno' : 'Isteklo',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Uslov extends StatelessWidget {
-  const _Uslov({
-    required this.ikona,
-    required this.naslov,
-    required this.vrednost,
-    required this.ispunjen,
-    required this.oznaka,
-  });
+  const _Uslov({required this.ikona, required this.naslov, required this.vrednost, this.ispunjen, this.oznaka});
 
   final IconData ikona;
   final String naslov;
   final String vrednost;
-  final bool ispunjen;
-  final String oznaka;
+
+  final bool? ispunjen;
+  final String? oznaka;
 
   @override
   Widget build(BuildContext context) {
@@ -95,17 +123,18 @@ class _Uslov extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: ispunjen ? Boje.uspehPozadina : Boje.greskaPozadina,
-                borderRadius: BorderRadius.circular(10),
+            if ((ispunjen, oznaka) case (final ispunjen?, final oznaka?))
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: ispunjen ? Boje.uspehPozadina : Boje.greskaPozadina,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${ispunjen ? '✓' : '✗'} $oznaka',
+                  style: tekst.labelSmall?.copyWith(color: ispunjen ? Boje.uspeh : Boje.greska),
+                ),
               ),
-              child: Text(
-                '${ispunjen ? '✓' : '✗'} $oznaka',
-                style: tekst.labelSmall?.copyWith(color: ispunjen ? Boje.uspeh : Boje.greska),
-              ),
-            ),
           ],
         ),
       ),

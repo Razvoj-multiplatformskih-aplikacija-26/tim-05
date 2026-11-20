@@ -15,7 +15,8 @@ final class UcitajPregled {
 
   final Sat sat;
 
-  Future<PregledPodataka> call(Korisnik ko) async {
+  Future<PregledPodataka> call(Korisnik? ko) async {
+    if (ko == null) return _javni();
     final odgovori = await Future.wait<Object>([
       ponude.ponude(),
       ponude.univerziteti(),
@@ -31,6 +32,19 @@ final class UcitajPregled {
       zauzetaMesta: odgovori[3] as Map<IdPonude, int>,
       student: odgovori[4] as Student,
       sacuvane: odgovori[5] as Set<IdPonude>,
+      sada: sat.sada(),
+    );
+  }
+
+  Future<PregledPodataka> _javni() async {
+    final odgovori = await Future.wait<Object>([ponude.ponude(), ponude.univerziteti(), ponude.zauzetaMesta()]);
+    return PregledPodataka(
+      ponude: odgovori[0] as List<Ponuda>,
+      univerziteti: odgovori[1] as List<Univerzitet>,
+      zauzetaMesta: odgovori[2] as Map<IdPonude, int>,
+      student: null,
+      prijaveStudenta: const [],
+      sacuvane: const {},
       sada: sat.sada(),
     );
   }

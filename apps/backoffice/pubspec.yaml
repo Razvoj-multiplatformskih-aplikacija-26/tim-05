@@ -24,12 +24,16 @@ dependencies:
     path: ../../packages/ui
   use_cases:
     path: ../../packages/use_cases
+  flutter_secure_storage: 11.2.0
+  api_client:
+    path: ../../packages/api_client
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
+  http: 1.6.0
 
 flutter_launcher_icons:
   android: false

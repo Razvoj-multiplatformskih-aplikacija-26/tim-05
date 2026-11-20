@@ -8,6 +8,7 @@ import 'package:ui/ui.dart';
 
 import '../widgeti/nije_pronadjeno.dart';
 import '../widgeti/oznaka_drzave.dart';
+import '../widgeti/potrebna_prijava.dart';
 import '../widgeti/zaglavlje.dart';
 
 class MojaPrijavaEkran extends StatelessWidget {
@@ -17,7 +18,7 @@ class MojaPrijavaEkran extends StatelessWidget {
 
   static ProfilObavestenje? _obavestenje(ProfilStanje stanje) => switch (stanje) {
     ProfilSaPodacima(:final obavestenje) => obavestenje,
-    ProfilUcitavanje() || ProfilGreska() => null,
+    ProfilUcitavanje() || ProfilGreska() || ProfilBezPrijave() => null,
   };
 
   static bool _mojaPoruka(ProfilStanje pre, ProfilStanje sad) => switch (_obavestenje(sad)) {
@@ -30,14 +31,13 @@ class MojaPrijavaEkran extends StatelessWidget {
     if (obavestenje == null) return;
     final podaci = switch (stanje) {
       ProfilSaPodacima(:final podaci) => podaci,
-      ProfilUcitavanje() || ProfilGreska() => null,
+      ProfilUcitavanje() || ProfilGreska() || ProfilBezPrijave() => null,
     };
     final idPonude = podaci?.prijava(idPrijave)?.idPonude;
     final ponuda = idPonude == null ? null : podaci?.ponuda(idPonude);
     final semestar = ponuda == null ? 'isti semestar' : nazivSemestra(ponuda.semestar).toLowerCase();
 
     final String poruka;
-    var uspeh = true;
     switch (obavestenje) {
       case PrijavaPovucena():
         poruka = 'Prijava je povučena.';
@@ -53,15 +53,13 @@ class MojaPrijavaEkran extends StatelessWidget {
         return;
       case AkcijaOdbijena(:final greska):
         poruka = greska.poruka;
-        uspeh = false;
-      case AkcijaNeuspela():
-        poruka = 'Radnja nije uspela. Proverite vezu i pokušajte ponovo.';
-        uspeh = false;
+      case AkcijaNeuspela(:final uzrok):
+        poruka = 'Radnja nije uspela. ${porukaKvara(uzrok)}';
     }
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(poruka)));
     context.read<ProfilBloc>().add(const ObavestenjeProfilaProcitano());
-    if (uspeh) context.read<PonudeBloc>().add(const PonudeOsvezene());
+    if (obavestenje is! AkcijaNeuspela) context.read<PonudeBloc>().add(const PonudeOsvezene());
     if (obavestenje is PrijavaObrisana) context.pop();
   }
 
@@ -73,7 +71,10 @@ class MojaPrijavaEkran extends StatelessWidget {
       listener: _reaguj,
       builder: (context, stanje) => switch (stanje) {
         ProfilUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
-        ProfilGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const ProfilZatrazen()))),
+        ProfilGreska(:final uzrok) => EkranStanja(
+          child: PrikazGreske(uzrok: uzrok, onPonovo: () => bloc.add(const ProfilZatrazen())),
+        ),
+        ProfilBezPrijave() => const PotrebnaPrijava(),
         ProfilSaPodacima(:final podaci, :final uToku) => _prikaz(context, podaci, uToku: uToku == idPrijave),
       },
     );
@@ -87,16 +88,25 @@ class MojaPrijavaEkran extends StatelessWidget {
     }
     final ponuda = podaci.ponuda(prijava.idPonude);
     if (ponuda == null) return const NijePronadjenoEkran();
-    return _MojaPrijava(podaci: podaci, prijava: prijava, ponuda: ponuda, uToku: uToku);
+    final student = podaci.student;
+    if (student == null) return const PotrebnaPrijava();
+    return _MojaPrijava(podaci: podaci, prijava: prijava, ponuda: ponuda, student: student, uToku: uToku);
   }
 }
 
 class _MojaPrijava extends StatelessWidget {
-  const _MojaPrijava({required this.podaci, required this.prijava, required this.ponuda, required this.uToku});
+  const _MojaPrijava({
+    required this.podaci,
+    required this.prijava,
+    required this.ponuda,
+    required this.student,
+    required this.uToku,
+  });
 
   final PregledPodataka podaci;
   final Prijava prijava;
   final Ponuda ponuda;
+  final Student student;
 
   final bool uToku;
 
@@ -139,7 +149,6 @@ class _MojaPrijava extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final univerzitet = podaci.univerzitet(ponuda.idUniverziteta);
-    final student = podaci.student;
     final stanje = prijava.stanje;
     final opis = '${univerzitet.naziv}, ${nazivSemestra(ponuda.semestar).toLowerCase()}';
     final mozeIzmenu = stanje.mozeSeMenjati;

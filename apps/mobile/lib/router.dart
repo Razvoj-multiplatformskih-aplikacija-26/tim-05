@@ -10,16 +10,20 @@ import 'ekrani/glavni_okvir.dart';
 import 'ekrani/moja_prijava_ekran.dart';
 import 'ekrani/pocetna_ekran.dart';
 import 'ekrani/ponuda_ekran.dart';
+import 'ekrani/prijavljivanje_ekran.dart';
 import 'ekrani/profil_ekran.dart';
 import 'ekrani/uredi_profil_ekran.dart';
 import 'zavisnosti.dart';
 
+String? _samoPrijavljen(BuildContext context, GoRouterState state) =>
+    context.read<SesijaBloc>().state is Prijavljen ? null : '/';
+
 Widget _formular(BuildContext context, {IdPonude? idPonude, IdPrijave? idPrijave}) {
   final zavisnosti = context.read<ZavisnostiAplikacije>();
   return BlocProvider(
-    create: (_) => FormularPrijaveBloc(
+    create: (context) => FormularPrijaveBloc(
       sacuvajPrijavu: zavisnosti.sacuvajPrijavu,
-      korisnik: zavisnosti.korisnik,
+      korisnik: (context.read<SesijaBloc>().state as Prijavljen).korisnik,
       idPonude: idPonude,
       idPrijave: idPrijave,
     ),
@@ -35,6 +39,7 @@ GoRoute _mojaPrijava(GlobalKey<NavigatorState> korenski, String putanja, String 
     GoRoute(
       path: 'izmena',
       parentNavigatorKey: korenski,
+      redirect: _samoPrijavljen,
       builder: (context, state) => _formular(context, idPrijave: IdPrijave(state.pathParameters[parametar]!)),
     ),
   ],
@@ -48,6 +53,7 @@ GoRoute _ponuda(GlobalKey<NavigatorState> korenski, String putanja) => GoRoute(
     GoRoute(
       path: 'prijava',
       parentNavigatorKey: korenski,
+      redirect: _samoPrijavljen,
       builder: (context, state) => _formular(context, idPonude: IdPonude(state.pathParameters['id']!)),
     ),
     _mojaPrijava(korenski, 'moja/:idPrijave', 'idPrijave'),
@@ -61,6 +67,7 @@ GoRouter napraviRuter() {
     initialLocation: '/dobrodosli',
     routes: [
       GoRoute(path: '/dobrodosli', builder: (context, state) => const DobrodosliEkran()),
+      GoRoute(path: '/login', builder: (context, state) => const PrijavljivanjeEkran()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, okvir) => GlavniOkvir(okvir: okvir),
         branches: [

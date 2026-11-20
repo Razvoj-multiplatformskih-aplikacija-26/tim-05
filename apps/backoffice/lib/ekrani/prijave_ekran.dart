@@ -214,7 +214,7 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
         UPripremi() || Poslata() || Potvrdjena() || Povucena() => 'Prijava je sačuvana.',
       },
       OdlukaOdbijena(:final greska) => greska.poruka,
-      OdlukaNeuspela() => 'Odluka nije sačuvana. Pokušajte ponovo.',
+      OdlukaNeuspela(:final uzrok) => 'Odluka nije sačuvana. ${porukaKvara(uzrok)}',
       PodaciOsvezeni() => 'Podaci su osveženi.',
     };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(poruka)));
@@ -254,6 +254,12 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
           PregledPrecicaIntent: CallbackAction<PregledPrecicaIntent>(
             onInvoke: (_) => prikaziPregledPrecica(context),
           ),
+          OsveziIntent: CallbackAction<OsveziIntent>(
+            onInvoke: (_) {
+              bloc.add(const PrijaveOsvezene());
+              return null;
+            },
+          ),
         },
         child: FocusScope(
           autofocus: true,
@@ -286,6 +292,11 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
                     onPressed: () => prikaziPregledPrecica(context),
                     icon: const Icon(Icons.keyboard_outlined),
                   ),
+                  IconButton(
+                    tooltip: 'Odjavi se',
+                    onPressed: () => context.read<SesijaBloc>().add(const OdjavaZatrazena()),
+                    icon: const Icon(Icons.logout),
+                  ),
                   if (kDebugMode && baza != null)
                     IconButton(
                       tooltip: 'Simuliraj grešku',
@@ -303,13 +314,16 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
                           prikaziPregledPrecica(context);
                         case 'greska':
                           if (baza != null) _simulirajGresku(baza);
+                        case 'odjava':
+                          context.read<SesijaBloc>().add(const OdjavaZatrazena());
                       }
                     },
                     itemBuilder: (context) => [
                       const PopupMenuItem(value: 'osvezi', child: Text('Osveži')),
                       const PopupMenuItem(value: 'precice', child: Text('Prečice')),
                       if (kDebugMode && baza != null)
-                        const PopupMenuItem(value: 'greska', child: Text('Simuliraj grešku')),
+                      const PopupMenuItem(value: 'greska', child: Text('Simuliraj grešku')),
+                      const PopupMenuItem(value: 'odjava', child: Text('Odjavi se')),
                     ],
                   ),
                 const SizedBox(width: 8),
@@ -341,7 +355,10 @@ class _PrijaveEkranState extends State<PrijaveEkran> {
               child: BlocBuilder<KoordinatorBloc, KoordinatorStanje>(
                 builder: (context, stanje) => switch (stanje) {
                   KoordinatorUcitavanje() => const PrikazUcitavanja(),
-                  KoordinatorGreska() => PrikazGreske(onPonovo: () => bloc.add(const PrijaveZatrazene())),
+                  KoordinatorGreska(:final uzrok) => PrikazGreske(
+                    uzrok: uzrok,
+                    onPonovo: () => bloc.add(const PrijaveZatrazene()),
+                  ),
                   KoordinatorPrazno() => const PrikazPraznog(
                     poruka: 'Na ponude vašeg univerziteta još nije stigla nijedna prijava.',
                   ),

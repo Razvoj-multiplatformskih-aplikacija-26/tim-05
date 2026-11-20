@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ui/ui.dart';
 import 'package:mobile/ekrani/formular_ekran.dart';
+import 'package:mobile/podaci/lazni_podaci.dart';
 import 'package:mobile/zavisnosti.dart';
 
 void main() {
@@ -19,13 +20,13 @@ void main() {
             create: (_) => PonudeBloc(
               ucitajPregled: zavisnosti.ucitajPregled,
               promeniSacuvanu: zavisnosti.promeniSacuvanu,
-              korisnik: zavisnosti.korisnik,
+              korisnik: pocetniKorisnik,
             )..add(const PonudeZatrazene()),
           ),
           BlocProvider(
             create: (_) => FormularPrijaveBloc(
               sacuvajPrijavu: zavisnosti.sacuvajPrijavu,
-              korisnik: zavisnosti.korisnik,
+              korisnik: pocetniKorisnik,
               idPonude: idPonude,
             ),
           ),

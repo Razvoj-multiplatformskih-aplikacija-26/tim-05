@@ -21,6 +21,10 @@ class PregledPrecicaIntent extends Intent {
   const PregledPrecicaIntent();
 }
 
+class OsveziIntent extends Intent {
+  const OsveziIntent();
+}
+
 class ZasticenaAkcija<T extends Intent> extends CallbackAction<T> {
   ZasticenaAkcija({required this.dozvoljena, required super.onInvoke});
 
@@ -35,6 +39,7 @@ Map<ShortcutActivator, Intent> precicePrijava() => {
   const SingleActivator(LogicalKeyboardKey.keyL): const ListaCekanjaIntent(),
   const SingleActivator(LogicalKeyboardKey.keyO): const OdbijIntent(),
   const SingleActivator(LogicalKeyboardKey.escape): const ZatvoriDetaljIntent(),
+  const SingleActivator(LogicalKeyboardKey.keyR): const OsveziIntent(),
   const CharacterActivator('?'): const PregledPrecicaIntent(),
 };
 
@@ -52,6 +57,7 @@ const opisiPrecica = [
   OpisPrecice('P', 'Prihvati izabranu prijavu'),
   OpisPrecice('L', 'Stavi izabranu prijavu na listu čekanja'),
   OpisPrecice('O', 'Odbij izabranu prijavu, uz razlog'),
+  OpisPrecice('R', 'Osveži podatke sa servera'),
   OpisPrecice('Tab', 'Sledeće dugme ili polje'),
   OpisPrecice('?', 'Pregled prečica'),
 ];

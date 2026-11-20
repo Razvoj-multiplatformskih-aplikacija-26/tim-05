@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../tekst/poruke_kvara.dart';
 import '../tema/tema.dart';
 
 class EkranStanja extends StatelessWidget {
@@ -32,11 +33,13 @@ class PrikazUcitavanja extends StatelessWidget {
 }
 
 class PrikazGreske extends StatelessWidget {
-  const PrikazGreske({super.key, required this.onPonovo});
+  const PrikazGreske({super.key, required this.onPonovo, this.uzrok});
 
   static const naslov = 'Podaci trenutno nisu dostupni.';
 
   final VoidCallback onPonovo;
+
+  final Object? uzrok;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +54,7 @@ class PrikazGreske extends StatelessWidget {
             const SizedBox(height: 16),
             Semantics(
               liveRegion: true,
-              child: Text(naslov, textAlign: TextAlign.center, style: tekst.titleMedium),
+              child: Text(porukaKvara(uzrok), textAlign: TextAlign.center, style: tekst.titleMedium),
             ),
             const SizedBox(height: 6),
             Text(

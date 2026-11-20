@@ -8,8 +8,16 @@ final class PonudeZatrazene extends PonudeDogadjaj {
   const PonudeZatrazene();
 }
 
+final class PonudeKorisnikPromenjen extends PonudeDogadjaj {
+  const PonudeKorisnikPromenjen(this.korisnik);
+
+  final Korisnik? korisnik;
+}
+
 final class PonudeOsvezene extends PonudeDogadjaj {
-  const PonudeOsvezene();
+  const PonudeOsvezene({this.gotovo});
+
+  final Completer<void>? gotovo;
 }
 
 final class FilteriPromenjeni extends PonudeDogadjaj {

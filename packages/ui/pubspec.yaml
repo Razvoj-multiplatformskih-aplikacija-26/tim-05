@@ -14,6 +14,9 @@ dependencies:
     sdk: flutter
   use_cases:
     path: ../use_cases
+  flutter_bloc: 9.1.1
+  blocs:
+    path: ../blocs
 
 dev_dependencies:
   flutter_lints: ^6.0.0

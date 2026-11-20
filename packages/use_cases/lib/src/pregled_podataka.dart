@@ -12,7 +12,7 @@ final class PregledPodataka extends Equatable {
     required this.sada,
   });
 
-  final Student student;
+  final Student? student;
   final List<Univerzitet> univerziteti;
   final List<Ponuda> ponude;
 
@@ -25,7 +25,7 @@ final class PregledPodataka extends Equatable {
 
   List<Prijava> get mojePrijave => [
     for (final p in prijaveStudenta)
-      if (p.idStudenta == student.id) p,
+      if (p.idStudenta == student?.id) p,
   ]..sort((a, b) => b.napravljena.compareTo(a.napravljena));
 
   Univerzitet univerzitet(IdUniverziteta id) => univerziteti.firstWhere((u) => u.id == id);
@@ -34,7 +34,10 @@ final class PregledPodataka extends Equatable {
 
   Prijava? prijava(IdPrijave id) => prijaveStudenta.where((p) => p.id == id).firstOrNull;
 
-  Prijava? mojaPrijavaZa(IdPonude idPonude) => nezavrsenaPrijava(student.id, idPonude, mojePrijave);
+  Prijava? mojaPrijavaZa(IdPonude idPonude) => switch (student) {
+    null => null,
+    final student => nezavrsenaPrijava(student.id, idPonude, mojePrijave),
+  };
 
   bool jeSacuvana(IdPonude id) => sacuvane.contains(id);
 
@@ -42,16 +45,22 @@ final class PregledPodataka extends Equatable {
 
   int slobodnaMesta(Ponuda ponuda) => slobodnaMestaZa(ponuda, zauzeto: zauzetaMesta[ponuda.id] ?? 0);
 
-  int get brojAktivnih => aktivnePrijave(student.id, prijaveStudenta).length;
+  int get brojAktivnih => switch (student) {
+    null => 0,
+    final student => aktivnePrijave(student.id, prijaveStudenta).length,
+  };
 
-  ProveraUslova uslovi(Ponuda ponuda) => ProveraUslova(
-    jezik: imaJezik(student, ponuda),
-    prosek: imaProsek(student, ponuda),
-    rok: rokNijeIstekao(ponuda, sada),
-    mestoZaPrijavu: imaMestaZaNovuPrijavu(student, prijaveStudenta),
-    brojAktivnih: brojAktivnih,
-    ishod: proveriUslove(student: student, ponuda: ponuda, svePrijave: prijaveStudenta, sada: sada, ponude: ponude),
-  );
+  ProveraUslova? uslovi(Ponuda ponuda) => switch (student) {
+    null => null,
+    final student => ProveraUslova(
+      jezik: imaJezik(student, ponuda),
+      prosek: imaProsek(student, ponuda),
+      rok: rokNijeIstekao(ponuda, sada),
+      mestoZaPrijavu: imaMestaZaNovuPrijavu(student, prijaveStudenta),
+      brojAktivnih: brojAktivnih,
+      ishod: proveriUslove(student: student, ponuda: ponuda, svePrijave: prijaveStudenta, sada: sada, ponude: ponude),
+    ),
+  };
 
   bool jeNova(Ponuda ponuda) => sada.difference(ponuda.objavljena).inDays < 7;
 

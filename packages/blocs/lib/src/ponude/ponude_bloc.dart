@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
@@ -7,14 +9,26 @@ part 'ponude_dogadjaj.dart';
 part 'ponude_stanje.dart';
 
 final class PonudeBloc extends Bloc<PonudeDogadjaj, PonudeStanje> {
-  PonudeBloc({required this.ucitajPregled, required this.promeniSacuvanu, required this.korisnik})
+  PonudeBloc({required this.ucitajPregled, required this.promeniSacuvanu, this._korisnik})
     : super(const PonudeUcitavanje()) {
     on<PonudeZatrazene>((dogadjaj, emit) async {
       final filteri = _trenutniFilteri();
       emit(const PonudeUcitavanje());
       await _ucitaj(emit, zapamceni: filteri);
     });
-    on<PonudeOsvezene>((dogadjaj, emit) => _ucitaj(emit));
+    on<PonudeKorisnikPromenjen>((dogadjaj, emit) async {
+      _korisnik = dogadjaj.korisnik;
+      final filteri = _trenutniFilteri();
+      emit(const PonudeUcitavanje());
+      await _ucitaj(emit, zapamceni: filteri);
+    });
+    on<PonudeOsvezene>((dogadjaj, emit) async {
+      try {
+        await _ucitaj(emit);
+      } finally {
+        dogadjaj.gotovo?.complete();
+      }
+    });
     on<FilteriPromenjeni>((dogadjaj, emit) {
       final trenutno = state;
       if (trenutno is PonudeUcitane) emit(trenutno.copyWith(filteri: dogadjaj.filteri));
@@ -28,7 +42,10 @@ final class PonudeBloc extends Bloc<PonudeDogadjaj, PonudeStanje> {
 
   final UcitajPregled ucitajPregled;
   final PromeniSacuvanu promeniSacuvanu;
-  final Korisnik korisnik;
+
+  Korisnik? _korisnik;
+
+  Korisnik? get korisnik => _korisnik;
 
   PonudeFilteri? _trenutniFilteri() => switch (state) {
     PonudeUcitane(:final filteri) => filteri,
@@ -36,8 +53,10 @@ final class PonudeBloc extends Bloc<PonudeDogadjaj, PonudeStanje> {
   };
 
   Future<void> _ucitaj(Emitter<PonudeStanje> emit, {PonudeFilteri? zapamceni, PonudeObavestenje? obavestenje}) async {
+    final ko = _korisnik;
     try {
-      final podaci = await ucitajPregled(korisnik);
+      final podaci = await ucitajPregled(ko);
+      if (ko != _korisnik) return;
       final filteri = _trenutniFilteri() ?? zapamceni ?? const PonudeFilteri();
       emit(
         podaci.ponude.isEmpty
@@ -45,17 +64,18 @@ final class PonudeBloc extends Bloc<PonudeDogadjaj, PonudeStanje> {
             : PonudeUcitane(podaci: podaci, filteri: filteri, obavestenje: obavestenje),
       );
     } on Exception catch (uzrok) {
-      emit(PonudeGreska(uzrok));
+      if (ko == _korisnik) emit(PonudeGreska(uzrok));
     }
   }
 
   Future<void> _onSacuvanaPromenjena(SacuvanaPromenjena dogadjaj, Emitter<PonudeStanje> emit) async {
     final trenutno = state;
-    if (trenutno is! PonudeUcitane || trenutno.cuvaSe != null) return;
+    final ko = _korisnik;
+    if (trenutno is! PonudeUcitane || trenutno.cuvaSe != null || ko == null) return;
     final bilaSacuvana = trenutno.podaci.jeSacuvana(dogadjaj.idPonude);
     emit(trenutno.copyWith(cuvaSe: () => dogadjaj.idPonude, obavestenje: () => null));
     try {
-      await promeniSacuvanu(ko: korisnik, idPonude: dogadjaj.idPonude);
+      await promeniSacuvanu(ko: ko, idPonude: dogadjaj.idPonude);
     } on Exception catch (uzrok) {
       if (state case final PonudeUcitane posle) {
         emit(posle.copyWith(cuvaSe: () => null, obavestenje: () => CuvanjePonudeNeuspelo(uzrok)));

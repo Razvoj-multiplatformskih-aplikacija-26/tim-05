@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +12,7 @@ import '../widgeti/isprekidana_linija.dart';
 import '../widgeti/oznaka_drzave.dart';
 import '../widgeti/zaglavlje.dart';
 import '../widgeti/kontrole_laznih_podataka.dart';
+import '../widgeti/potrebna_prijava.dart';
 
 class ProfilEkran extends StatelessWidget {
   const ProfilEkran({super.key});
@@ -20,108 +23,123 @@ class ProfilEkran extends StatelessWidget {
     return BlocBuilder<ProfilBloc, ProfilStanje>(
       builder: (context, stanje) => switch (stanje) {
         ProfilUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
-        ProfilGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const ProfilZatrazen()))),
-        final ProfilSaPodacima saPodacima => _Profil(stanje: saPodacima),
+        ProfilGreska(:final uzrok) => EkranStanja(
+          child: PrikazGreske(uzrok: uzrok, onPonovo: () => bloc.add(const ProfilZatrazen())),
+        ),
+        ProfilBezPrijave() => const PotrebnaPrijava(),
+        final ProfilSaPodacima saPodacima => switch (saPodacima.podaci.student) {
+          final student? => _Profil(stanje: saPodacima, student: student),
+          null => const PotrebnaPrijava(),
+        },
       },
     );
   }
 }
 
 class _Profil extends StatelessWidget {
-  const _Profil({required this.stanje});
+  const _Profil({required this.stanje, required this.student});
 
   final ProfilSaPodacima stanje;
+  final Student student;
 
   @override
   Widget build(BuildContext context) {
     final tekst = Theme.of(context).textTheme;
     final podaci = stanje.podaci;
-    final student = podaci.student;
     final moje = podaci.mojePrijave;
     final sacuvane = podaci.sacuvanePonude;
     final jePrijave = stanje.prikaz == PrikazProfila.prijave;
     final bloc = context.read<ProfilBloc>();
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: BordoZaglavlje(
-              dubinaPreklopa: 26,
-              preklop: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _Statistika(student: student, aktivno: podaci.brojAktivnih),
-              ),
-              child: _Zaglavlje(
-                student: student,
-                naUredi: () => context.push('/profil/uredi'),
-                meni: KontroleLaznihPodataka(
-                  naPrazanOdgovor: (baza) => baza.prazneListePrijava = 1,
-                  naPonovnoUcitavanje: () => bloc.add(const ProfilZatrazen()),
+      body: RefreshIndicator(
+        onRefresh: () {
+          final gotovo = Completer<void>();
+          bloc.add(ProfilOsvezen(gotovo: gotovo));
+          return gotovo.future;
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: BordoZaglavlje(
+                dubinaPreklopa: 26,
+                preklop: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _Statistika(student: student, aktivno: podaci.brojAktivnih),
+                ),
+                child: _Zaglavlje(
+                  student: student,
+                  naUredi: () => context.push('/profil/uredi'),
+                  naOdjavu: () => context.read<SesijaBloc>().add(const OdjavaZatrazena()),
+                  meni: KontroleLaznihPodataka(
+                    naPrazanOdgovor: (baza) => baza.prazneListePrijava = 1,
+                    naPonovnoUcitavanje: () => bloc.add(const ProfilZatrazen()),
+                  ),
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _Prekidac(
-                    izabran: stanje.prikaz,
-                    brojPrijava: moje.length,
-                    brojSacuvanih: sacuvane.length,
-                    onPromena: (prikaz) => bloc.add(PrikazProfilaPromenjen(prikaz)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(2, 14, 2, 10),
-                    child: Text(
-                      jePrijave
-                          ? 'Dodirnite prijavu da vidite ceo sadržaj i akcije.'
-                          : 'Ponude koje ste sačuvali da pogledate kasnije.',
-                      style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Prekidac(
+                      izabran: stanje.prikaz,
+                      brojPrijava: moje.length,
+                      brojSacuvanih: sacuvane.length,
+                      onPromena: (prikaz) => bloc.add(PrikazProfilaPromenjen(prikaz)),
                     ),
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(2, 14, 2, 10),
+                      child: Text(
+                        jePrijave
+                            ? 'Dodirnite prijavu da vidite ceo sadržaj i akcije.'
+                            : 'Ponude koje ste sačuvali da pogledate kasnije.',
+                        style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (jePrijave)
+              _lista(
+                prazno: PrikazPraznog(
+                  ikona: Icons.description_outlined,
+                  poruka: 'Još nemate prijava. Izaberite ponudu na Početnoj.',
+                  dugme: 'Pogledaj ponude',
+                  onPritisak: () => context.go('/'),
+                ),
+                kartice: [
+                  for (final prijava in moje)
+                    _KarticaPrijave(
+                      key: ValueKey(prijava.id),
+                      podaci: podaci,
+                      prijava: prijava,
+                      naDodir: () => context.push('/profil/prijave/${prijava.id.vrednost}'),
+                    ),
+                ],
+              )
+            else
+              _lista(
+                prazno: const PrikazPraznog(
+                  ikona: Icons.bookmark_border,
+                  poruka: 'Nemate sačuvanih ponuda. Sačuvajte ponudu dugmetom na njenom ekranu.',
+                ),
+                kartice: [
+                  for (final ponuda in sacuvane)
+                    _KarticaSacuvane(
+                      key: ValueKey(ponuda.id),
+                      podaci: podaci,
+                      ponuda: ponuda,
+                      naDodir: () => context.push('/profil/sacuvane/${ponuda.id.vrednost}'),
+                    ),
                 ],
               ),
-            ),
-          ),
-          if (jePrijave)
-            _lista(
-              prazno: PrikazPraznog(
-                ikona: Icons.description_outlined,
-                poruka: 'Još nemate prijava. Izaberite ponudu na Početnoj.',
-                dugme: 'Pogledaj ponude',
-                onPritisak: () => context.go('/'),
-              ),
-              kartice: [
-                for (final prijava in moje)
-                  _KarticaPrijave(
-                    key: ValueKey(prijava.id),
-                    podaci: podaci,
-                    prijava: prijava,
-                    naDodir: () => context.push('/profil/prijave/${prijava.id.vrednost}'),
-                  ),
-              ],
-            )
-          else
-            _lista(
-              prazno: const PrikazPraznog(
-                ikona: Icons.bookmark_border,
-                poruka: 'Nemate sačuvanih ponuda. Sačuvajte ponudu dugmetom na njenom ekranu.',
-              ),
-              kartice: [
-                for (final ponuda in sacuvane)
-                  _KarticaSacuvane(
-                    key: ValueKey(ponuda.id),
-                    podaci: podaci,
-                    ponuda: ponuda,
-                    naDodir: () => context.push('/profil/sacuvane/${ponuda.id.vrednost}'),
-                  ),
-              ],
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -140,10 +158,11 @@ class _Profil extends StatelessWidget {
 }
 
 class _Zaglavlje extends StatelessWidget {
-  const _Zaglavlje({required this.student, required this.naUredi, required this.meni});
+  const _Zaglavlje({required this.student, required this.naUredi, required this.naOdjavu, required this.meni});
 
   final Student student;
   final VoidCallback naUredi;
+  final VoidCallback naOdjavu;
   final Widget meni;
 
   @override
@@ -162,6 +181,11 @@ class _Zaglavlje extends StatelessWidget {
             ),
             const Spacer(),
             meni,
+            IconButton(
+              tooltip: 'Odjavi se',
+              icon: const Icon(Icons.logout, color: Boje.bela),
+              onPressed: naOdjavu,
+            ),
           ],
         ),
         const SizedBox(height: 18),

@@ -180,7 +180,7 @@ void main() {
         isA<ProfilUcitan>().having((s) => s.cuvaSeProfil, 'čuva se profil', isTrue),
         isA<ProfilUcitan>()
             .having((s) => s.cuvaSeProfil, 'čuva se profil', isFalse)
-            .having((s) => s.podaci.student.prosek, 'prosek', 9.1)
+            .having((s) => s.podaci.student?.prosek, 'prosek', 9.1)
             .having((s) => s.obavestenje, 'obaveštenje', const ProfilSacuvan()),
         isA<ProfilUcitan>().having((s) => s.obavestenje, 'obaveštenje', isNull),
       ],

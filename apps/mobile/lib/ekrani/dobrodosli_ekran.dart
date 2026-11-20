@@ -1,7 +1,10 @@
+import 'package:blocs/blocs.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui/ui.dart';
 
+import 'prijavljivanje_ekran.dart';
 
 class DobrodosliEkran extends StatelessWidget {
   const DobrodosliEkran({super.key});
@@ -59,14 +62,19 @@ class DobrodosliEkran extends StatelessWidget {
                 ),
               ),
               FilledButton(
-                onPressed: () => context.go('/'),
+                onPressed: () async {
+                  if (await osigurajPrijavu(context) && context.mounted) context.go('/');
+                },
                 style: FilledButton.styleFrom(
                   backgroundColor: Boje.zuta,
                   foregroundColor: Boje.naZutoj,
                   minimumSize: const Size.fromHeight(56),
                   shape: dugme,
                 ),
-                child: const Text('Uloguj se'),
+                child: Text(switch (context.watch<SesijaBloc>().state) {
+                  Prijavljen(:final korisnik) => 'Nastavi kao ${korisnik.korisnickoIme}',
+                  SesijaNepoznata() || Odjavljen() => 'Uloguj se',
+                }),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
@@ -77,11 +85,11 @@ class DobrodosliEkran extends StatelessWidget {
                   minimumSize: const Size.fromHeight(56),
                   shape: dugme,
                 ),
-                child: const Text('Napravi nalog'),
+                child: const Text('Pogledaj ponude'),
               ),
               const SizedBox(height: 18),
               Text(
-                'Za studente i koordinatore partnerskih univerziteta',
+                'Za studente. Koordinatori partnerskih univerziteta koriste backoffice.',
                 textAlign: TextAlign.center,
                 style: tekst.bodySmall?.copyWith(color: Boje.belaProvidna, fontSize: 12),
               ),
