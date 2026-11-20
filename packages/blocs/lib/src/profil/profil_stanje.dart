@@ -16,6 +16,10 @@ final class ProfilUcitavanje extends ProfilStanje {
   const ProfilUcitavanje();
 }
 
+final class ProfilBezPrijave extends ProfilStanje {
+  const ProfilBezPrijave();
+}
+
 final class ProfilGreska extends ProfilStanje {
   const ProfilGreska(this.uzrok);
 

@@ -1,3 +1,5 @@
+library;
+
 import 'dart:io';
 
 import 'package:api_client/api_client.dart';
@@ -29,6 +31,23 @@ void main() {
     expect(ponude, hasLength(11));
   });
 
+  test('bez prijave: isti UcitajPregled daje samo javni deo (mobilna aplikacija pre prijave)', () async {
+    final telefon = Klijent();
+
+    final pregled = await UcitajPregled(
+      ponude: telefon.ponude,
+      prijave: telefon.prijave,
+      studenti: telefon.studenti,
+      sat: sat,
+    )(null);
+
+    expect(pregled.student, isNull);
+    expect(pregled.ponude, hasLength(11));
+    expect(pregled.mojePrijave, isEmpty);
+    final milano = pregled.ponude.firstWhere((p) => p.id == const IdPonude('po-1'));
+    expect(pregled.slobodnaMesta(milano), 2);
+  });
+
   test('student: isti UcitajPregled kao na KT1, sada sa servera; samo svoje prijave', () async {
     final telefon = Klijent();
     final andrej = await telefon.prijaviSe('student1');
@@ -40,7 +59,7 @@ void main() {
       sat: sat,
     )(andrej);
 
-    expect(pregled.student.ime, 'Andrej');
+    expect(pregled.student?.ime, 'Andrej');
     expect(pregled.prijaveStudenta, hasLength(10));
     expect(pregled.prijaveStudenta.map((p) => p.idStudenta), everyElement(andrej.id));
     final milano = pregled.ponude.firstWhere((p) => p.id == const IdPonude('po-1'));

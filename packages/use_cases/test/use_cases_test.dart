@@ -72,8 +72,8 @@ void main() {
       final svaPonuda = pregled.ponude.single;
       expect(pregled.slobodnaMesta(svaPonuda), 1);
       expect(pregled.brojAktivnih, 1);
-      expect(pregled.uslovi(svaPonuda).prosek, isFalse);
-      expect(pregled.uslovi(svaPonuda).ishod.greskaIliNull, isA<NedovoljanProsek>());
+      expect(pregled.uslovi(svaPonuda)!.prosek, isFalse);
+      expect(pregled.uslovi(svaPonuda)!.ishod.greskaIliNull, isA<NedovoljanProsek>());
     });
 
     test('greška porta prolazi do onoga ko je pozvao', () async {

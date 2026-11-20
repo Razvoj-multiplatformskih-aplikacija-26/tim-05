@@ -12,6 +12,6 @@ void postaviTelefon(WidgetTester tester) {
 Future<void> otvoriAplikaciju(WidgetTester tester, ZavisnostiAplikacije zavisnosti) async {
   await tester.pumpWidget(ErasmusAplikacija(zavisnosti: zavisnosti));
   await tester.pump();
-  await tester.tap(find.text('Uloguj se'));
+  await tester.tap(find.text('Pogledaj ponude'));
   await tester.pump();
 }

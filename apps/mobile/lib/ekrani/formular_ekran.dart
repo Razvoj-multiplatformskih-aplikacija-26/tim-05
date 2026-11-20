@@ -10,6 +10,7 @@ import 'package:ui/ui.dart';
 import '../widgeti/lista_uslova.dart';
 import '../widgeti/nije_pronadjeno.dart';
 import '../widgeti/oznaka_drzave.dart';
+import '../widgeti/potrebna_prijava.dart';
 import '../widgeti/zaglavlje.dart';
 
 class FormularEkran extends StatelessWidget {
@@ -45,15 +46,28 @@ class FormularEkran extends StatelessWidget {
           case PonudeUcitavanje():
             return const EkranStanja(child: PrikazUcitavanja());
           case PonudeGreska():
-            return EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const PonudeZatrazene())));
+            return EkranStanja(
+              child: PrikazGreske(uzrok: stanje.uzrok, onPonovo: () => bloc.add(const PonudeZatrazene())),
+            );
           case PonudePrazne():
             return const NijePronadjenoEkran();
           case PonudeUcitane(:final podaci):
+            final student = podaci.student;
+            if (student == null) return const PotrebnaPrijava();
             final postojeca = idPrijave == null ? null : podaci.prijava(idPrijave!);
             if (idPrijave != null && postojeca == null) return const NijePronadjenoEkran();
             final ponuda = podaci.ponuda(idPonude ?? postojeca!.idPonude);
             if (ponuda == null) return const NijePronadjenoEkran();
-            return _Formular(podaci: podaci, ponuda: ponuda, postojeca: postojeca);
+            return switch (podaci.uslovi(ponuda)) {
+              final uslovi? => _Formular(
+                podaci: podaci,
+                ponuda: ponuda,
+                postojeca: postojeca,
+                student: student,
+                uslovi: uslovi,
+              ),
+              null => const PotrebnaPrijava(),
+            };
         }
       },
     );
@@ -61,11 +75,19 @@ class FormularEkran extends StatelessWidget {
 }
 
 class _Formular extends StatefulWidget {
-  const _Formular({required this.podaci, required this.ponuda, required this.postojeca});
+  const _Formular({
+    required this.podaci,
+    required this.ponuda,
+    required this.postojeca,
+    required this.student,
+    required this.uslovi,
+  });
 
   final PregledPodataka podaci;
   final Ponuda ponuda;
   final Prijava? postojeca;
+  final Student student;
+  final ProveraUslova uslovi;
 
   @override
   State<_Formular> createState() => _FormularState();
@@ -116,9 +138,11 @@ class _FormularState extends State<_Formular> {
         context.read<ProfilBloc>().add(const ProfilOsvezen());
       case FormularOdbijen(:final greska):
         _poruka(greska.poruka);
-      case FormularNeuspeo():
+        context.read<PonudeBloc>().add(const PonudeOsvezene());
+        context.read<ProfilBloc>().add(const ProfilOsvezen());
+      case FormularNeuspeo(:final uzrok):
         _poruka(
-          'Prijava nije sačuvana.',
+          'Prijava nije sačuvana. ${porukaKvara(uzrok)}',
           akcija: SnackBarAction(
             label: 'Pokušaj ponovo',
             onPressed: () => _zatrazi(posalji: _poslednjeSlanje),
@@ -141,7 +165,7 @@ class _FormularState extends State<_Formular> {
     final ponuda = widget.ponuda;
     final podaci = widget.podaci;
     final univerzitet = podaci.univerzitet(ponuda.idUniverziteta);
-    final student = podaci.student;
+    final student = widget.student;
     final postojeca = widget.postojeca;
     final stanje = postojeca?.stanje ?? const UPripremi();
     final tekst = Theme.of(context).textTheme;
@@ -251,7 +275,7 @@ class _FormularState extends State<_Formular> {
                     if (!_menjaPoslatu) ...[
                       const _Korak(broj: 3, naslov: 'Provera pre slanja'),
                       const SizedBox(height: 6),
-                      ProveraPreSlanja(ponuda: ponuda, student: student, uslovi: podaci.uslovi(ponuda)),
+                      ProveraPreSlanja(ponuda: ponuda, student: student, uslovi: widget.uslovi),
                     ],
                   ],
                 ),

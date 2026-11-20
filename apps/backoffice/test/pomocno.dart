@@ -5,6 +5,7 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:use_cases/use_cases.dart';
+import 'package:backoffice/podaci/lazne_sesije.dart';
 
 
 final sat = FiksniSat(DateTime(2026, 11, 1, 12));
@@ -14,7 +15,13 @@ ZavisnostiBackoffice lazneZavisnosti({Duration kasnjenje = Duration.zero}) =>
 
 ZavisnostiBackoffice bezPrijava() {
   final baza = _BazaBezPrijava();
-  return ZavisnostiBackoffice(korisnik: pocetniKoordinator, sat: sat, ponude: baza, prijave: baza, studenti: baza);
+  return ZavisnostiBackoffice(
+    sat: sat,
+    ponude: baza,
+    prijave: baza,
+    studenti: baza,
+    sesije: LazneSesije(prijavljen: pocetniKoordinator),
+  );
 }
 
 void postaviProzor(WidgetTester tester, {required double sirina, double visina = 900}) {

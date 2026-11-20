@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
@@ -14,18 +16,25 @@ final class ProfilBloc extends Bloc<ProfilDogadjaj, ProfilStanje> {
     required this.odbijMesto,
     required this.obrisiPrijavu,
     required this.sacuvajProfil,
-    required this.korisnik,
+    this._korisnik,
   }) : super(const ProfilUcitavanje()) {
-    on<ProfilZatrazen>((dogadjaj, emit) async {
-      emit(const ProfilUcitavanje());
-      await _ucitaj(emit);
+    on<ProfilZatrazen>((dogadjaj, emit) => _ucitajIspocetka(emit));
+    on<ProfilKorisnikPromenjen>((dogadjaj, emit) {
+      _korisnik = dogadjaj.korisnik;
+      return _ucitajIspocetka(emit);
     });
-    on<ProfilOsvezen>((dogadjaj, emit) => _ucitaj(emit));
+    on<ProfilOsvezen>((dogadjaj, emit) async {
+      try {
+        await _ucitaj(emit);
+      } finally {
+        dogadjaj.gotovo?.complete();
+      }
+    });
     on<PovlacenjeZatrazeno>(
       (dogadjaj, emit) => _izvrsi<Prijava>(
         emit,
         id: dogadjaj.id,
-        akcija: () => povuciPrijavu(ko: korisnik, id: dogadjaj.id),
+        akcija: (ko) => povuciPrijavu(ko: ko, id: dogadjaj.id),
         uspeh: (_) => const PrijavaPovucena(),
       ),
     );
@@ -33,7 +42,7 @@ final class ProfilBloc extends Bloc<ProfilDogadjaj, ProfilStanje> {
       (dogadjaj, emit) => _izvrsi<List<Prijava>>(
         emit,
         id: dogadjaj.id,
-        akcija: () => potvrdiMesto(ko: korisnik, id: dogadjaj.id),
+        akcija: (ko) => potvrdiMesto(ko: ko, id: dogadjaj.id),
         uspeh: (izmenjene) => MestoPotvrdjeno(brojPovucenih: izmenjene.length - 1),
       ),
     );
@@ -41,7 +50,7 @@ final class ProfilBloc extends Bloc<ProfilDogadjaj, ProfilStanje> {
       (dogadjaj, emit) => _izvrsi<Prijava>(
         emit,
         id: dogadjaj.id,
-        akcija: () => odbijMesto(ko: korisnik, id: dogadjaj.id),
+        akcija: (ko) => odbijMesto(ko: ko, id: dogadjaj.id),
         uspeh: (_) => const MestoOdbijeno(),
       ),
     );
@@ -49,14 +58,14 @@ final class ProfilBloc extends Bloc<ProfilDogadjaj, ProfilStanje> {
       (dogadjaj, emit) => _izvrsi<Prijava>(
         emit,
         id: dogadjaj.id,
-        akcija: () => obrisiPrijavu(ko: korisnik, id: dogadjaj.id),
+        akcija: (ko) => obrisiPrijavu(ko: ko, id: dogadjaj.id),
         uspeh: (_) => const PrijavaObrisana(),
       ),
     );
     on<ProfilIzmenjen>(
       (dogadjaj, emit) => _izvrsi<Student>(
         emit,
-        akcija: () => sacuvajProfil(ko: korisnik, student: dogadjaj.student),
+        akcija: (ko) => sacuvajProfil(ko: ko, student: dogadjaj.student),
         uspeh: (_) => const ProfilSacuvan(),
       ),
     );
@@ -76,15 +85,27 @@ final class ProfilBloc extends Bloc<ProfilDogadjaj, ProfilStanje> {
   final OdbijMesto odbijMesto;
   final ObrisiPrijavu obrisiPrijavu;
   final SacuvajProfil sacuvajProfil;
-  final Korisnik korisnik;
+
+  Korisnik? _korisnik;
+
+  Korisnik? get korisnik => _korisnik;
+
+  Future<void> _ucitajIspocetka(Emitter<ProfilStanje> emit) async {
+    if (_korisnik == null) return emit(const ProfilBezPrijave());
+    emit(const ProfilUcitavanje());
+    await _ucitaj(emit);
+  }
 
   Future<void> _ucitaj(Emitter<ProfilStanje> emit, {ProfilObavestenje? obavestenje}) async {
+    final ko = _korisnik;
+    if (ko == null) return emit(const ProfilBezPrijave());
     try {
-      final podaci = await ucitajPregled(korisnik);
+      final podaci = await ucitajPregled(ko);
+      if (ko != _korisnik) return;
 
       final prikaz = switch (state) {
         ProfilSaPodacima(:final prikaz) => prikaz,
-        ProfilUcitavanje() || ProfilGreska() => PrikazProfila.prijave,
+        ProfilUcitavanje() || ProfilGreska() || ProfilBezPrijave() => PrikazProfila.prijave,
       };
       emit(
         podaci.mojePrijave.isEmpty
@@ -92,25 +113,27 @@ final class ProfilBloc extends Bloc<ProfilDogadjaj, ProfilStanje> {
             : ProfilUcitan(podaci: podaci, prikaz: prikaz, obavestenje: obavestenje),
       );
     } on Exception catch (uzrok) {
-      emit(ProfilGreska(uzrok));
+      if (ko == _korisnik) emit(ProfilGreska(uzrok));
     }
   }
+
 
   Future<void> _izvrsi<T>(
     Emitter<ProfilStanje> emit, {
     IdPrijave? id,
-    required Future<Rezultat<T>> Function() akcija,
+    required Future<Rezultat<T>> Function(Korisnik ko) akcija,
     required ProfilObavestenje Function(T vrednost) uspeh,
   }) async {
     final trenutno = state;
-    if (trenutno is! ProfilSaPodacima || trenutno.akcijaTraje) return;
+    final ko = _korisnik;
+    if (trenutno is! ProfilSaPodacima || trenutno.akcijaTraje || ko == null) return;
     emit(trenutno.copyWith(uToku: () => id, cuvaSeProfil: id == null));
     try {
-      switch (await akcija()) {
+      switch (await akcija(ko)) {
         case Uspeh(:final vrednost):
           await _ucitaj(emit, obavestenje: uspeh(vrednost));
         case Neuspeh(:final greska):
-          _zavrsi(emit, AkcijaOdbijena(greska));
+          await _ucitaj(emit, obavestenje: AkcijaOdbijena(greska));
       }
     } on Exception catch (uzrok) {
       _zavrsi(emit, AkcijaNeuspela(uzrok));

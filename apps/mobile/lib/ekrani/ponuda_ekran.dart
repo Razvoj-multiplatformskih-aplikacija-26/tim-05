@@ -10,6 +10,7 @@ import '../widgeti/isprekidana_linija.dart';
 import '../widgeti/lista_uslova.dart';
 import '../widgeti/nije_pronadjeno.dart';
 import '../widgeti/zaglavlje.dart';
+import 'prijavljivanje_ekran.dart';
 
 class PonudaEkran extends StatelessWidget {
   const PonudaEkran({super.key, required this.idPonude});
@@ -24,7 +25,7 @@ class PonudaEkran extends StatelessWidget {
     final poruka = switch (obavestenje) {
       PonudaSacuvana() => 'Ponuda je sačuvana.',
       PonudaUklonjena() => 'Ponuda je uklonjena iz sačuvanih.',
-      CuvanjePonudeNeuspelo() => 'Čuvanje ponude nije uspelo.',
+      CuvanjePonudeNeuspelo(:final uzrok) => 'Čuvanje ponude nije uspelo. ${porukaKvara(uzrok)}',
       null => null,
     };
     if (poruka == null) return;
@@ -40,7 +41,9 @@ class PonudaEkran extends StatelessWidget {
       listener: _reaguj,
       builder: (context, stanje) => switch (stanje) {
         PonudeUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
-        PonudeGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const PonudeZatrazene()))),
+        PonudeGreska(:final uzrok) => EkranStanja(
+          child: PrikazGreske(uzrok: uzrok, onPonovo: () => bloc.add(const PonudeZatrazene())),
+        ),
         PonudePrazne() => const NijePronadjenoEkran(),
         PonudeUcitane(:final podaci, :final cuvaSe) => switch (podaci.ponuda(idPonude)) {
           null => const NijePronadjenoEkran(),
@@ -68,8 +71,10 @@ class _Ponuda extends StatelessWidget {
     final univerzitet = podaci.univerzitet(ponuda.idUniverziteta);
     final postojeca = podaci.mojaPrijavaZa(ponuda.id);
     final uslovi = podaci.uslovi(ponuda);
+    final razlogOdbijanja = uslovi?.ishod.greskaIliNull;
     final slobodno = podaci.slobodnaMesta(ponuda);
     final sacuvana = podaci.jeSacuvana(ponuda.id);
+    final prijavljen = podaci.student != null;
     final tekst = Theme.of(context).textTheme;
     final belo = Boje.bela.withValues(alpha: 0.9);
 
@@ -108,7 +113,9 @@ class _Ponuda extends StatelessWidget {
                         ikona: sacuvana ? Icons.bookmark : Icons.bookmark_border,
                         boja: Boje.zuta,
                         opis: sacuvana ? 'Ukloni iz sačuvanih' : 'Sačuvaj ponudu',
-                        onPressed: () => context.read<PonudeBloc>().add(SacuvanaPromenjena(ponuda.id)),
+                        onPressed: prijavljen
+                            ? () => context.read<PonudeBloc>().add(SacuvanaPromenjena(ponuda.id))
+                            : () => osigurajPrijavu(context),
                       ),
                   ],
                 ),
@@ -164,7 +171,10 @@ class _Ponuda extends StatelessWidget {
                   ),
                 ),
                 const _Naslov('Uslovi'),
-                ListaUslova(ponuda: ponuda, student: podaci.student, uslovi: uslovi),
+                switch ((podaci.student, uslovi)) {
+                  (final student?, final uslovi?) => ListaUslova(ponuda: ponuda, student: student, uslovi: uslovi),
+                  _ => UsloviBezPrijave(ponuda: ponuda, sada: podaci.sada),
+                },
                 if (ponuda.napomena case final napomena?) ...[
                   const _Naslov('Napomena'),
                   Container(
@@ -191,19 +201,19 @@ class _Ponuda extends StatelessWidget {
                   'Objavio koordinator · ${univerzitet.naziv} · ${formatDatum(ponuda.objavljena)}',
                   style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst, fontSize: 12),
                 ),
-                if (postojeca == null && uslovi.ishod.greskaIliNull != null) ...[
+                if (postojeca == null && razlogOdbijanja != null) ...[
                   const SizedBox(height: 16),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(color: Boje.greskaPozadina, borderRadius: BorderRadius.circular(16)),
                     child: Text(
-                      'Ne možete se prijaviti: ${uslovi.ishod.greskaIliNull!.poruka}',
+                      'Ne možete se prijaviti: ${razlogOdbijanja.poruka}',
                       style: tekst.bodyMedium?.copyWith(color: Boje.greska),
                     ),
                   ),
                 ],
-                if (postojeca == null && uslovi.ispunjeni && slobodno == 0) ...[
+                if (postojeca == null && (uslovi?.ispunjeni ?? false) && slobodno == 0) ...[
                   const SizedBox(height: 16),
                   Container(
                     width: double.infinity,
@@ -231,11 +241,18 @@ class _Ponuda extends StatelessWidget {
               ikona: Icons.description_outlined,
               onPressed: () => _otvori(context, 'moja/${postojeca.id.vrednost}'),
             )
-          : _DugmeSaNatpisom(
-              natpis: uslovi.ispunjeni ? 'Prijavi se' : 'Uslovi nisu ispunjeni',
-              ikona: Icons.add,
-              onPressed: uslovi.ispunjeni ? () => _otvori(context, 'prijava') : null,
-            ),
+          : switch (uslovi) {
+              null => _DugmeSaNatpisom(
+                natpis: 'Prijavi se',
+                ikona: Icons.add,
+                onPressed: () => osigurajPrijavu(context),
+              ),
+              final uslovi => _DugmeSaNatpisom(
+                natpis: uslovi.ispunjeni ? 'Prijavi se' : 'Uslovi nisu ispunjeni',
+                ikona: Icons.add,
+                onPressed: uslovi.ispunjeni ? () => _otvori(context, 'prijava') : null,
+              ),
+            },
     );
   }
 }

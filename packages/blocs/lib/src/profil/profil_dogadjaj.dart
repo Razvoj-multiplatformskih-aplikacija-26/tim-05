@@ -8,8 +8,16 @@ final class ProfilZatrazen extends ProfilDogadjaj {
   const ProfilZatrazen();
 }
 
+final class ProfilKorisnikPromenjen extends ProfilDogadjaj {
+  const ProfilKorisnikPromenjen(this.korisnik);
+
+  final Korisnik? korisnik;
+}
+
 final class ProfilOsvezen extends ProfilDogadjaj {
-  const ProfilOsvezen();
+  const ProfilOsvezen({this.gotovo});
+
+  final Completer<void>? gotovo;
 }
 
 final class PovlacenjeZatrazeno extends ProfilDogadjaj {

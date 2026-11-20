@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +20,9 @@ class PocetnaEkran extends StatelessWidget {
     return BlocBuilder<PonudeBloc, PonudeStanje>(
       builder: (context, stanje) => switch (stanje) {
         PonudeUcitavanje() => const EkranStanja(child: PrikazUcitavanja()),
-        PonudeGreska() => EkranStanja(child: PrikazGreske(onPonovo: () => bloc.add(const PonudeZatrazene()))),
+        PonudeGreska(:final uzrok) => EkranStanja(
+          child: PrikazGreske(uzrok: uzrok, onPonovo: () => bloc.add(const PonudeZatrazene())),
+        ),
         PonudePrazne() => EkranStanja(
           child: PrikazPraznog(
             ikona: Icons.travel_explore,
@@ -98,70 +102,78 @@ class _PonudeState extends State<_Ponude> {
     final bloc = context.read<PonudeBloc>();
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: BordoZaglavlje(
-              dubinaPreklopa: 26,
-              preklop: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _pretragaPolje()),
-              child: _Pozdrav(
-                ime: podaci.student.ime,
-                meni: KontroleLaznihPodataka(
-                  naPrazanOdgovor: (baza) => baza.prazneListePonuda = 1,
-                  naPonovnoUcitavanje: () => bloc.add(const PonudeZatrazene()),
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(child: _filteriRed()),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 20, 18, 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Expanded(
-                    child: Semantics(header: true, child: Text('Najnovije ponude', style: tekst.titleLarge)),
+      body: RefreshIndicator(
+        onRefresh: () {
+          final gotovo = Completer<void>();
+          bloc.add(PonudeOsvezene(gotovo: gotovo));
+          return gotovo.future;
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: BordoZaglavlje(
+                dubinaPreklopa: 26,
+                preklop: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _pretragaPolje()),
+                child: _Pozdrav(
+                  ime: podaci.student?.ime,
+                  meni: KontroleLaznihPodataka(
+                    naPrazanOdgovor: (baza) => baza.prazneListePonuda = 1,
+                    naPonovnoUcitavanje: () => bloc.add(const PonudeZatrazene()),
                   ),
-                  const SizedBox(width: 12),
-                  Text('Ukupno: ${ponude.length}', style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst)),
-                ],
-              ),
-            ),
-          ),
-          if (ponude.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text(
-                  'Nema ponuda za izabranu pretragu.',
-                  textAlign: TextAlign.center,
-                  style: tekst.bodyLarge?.copyWith(color: Boje.sporedniTekst),
                 ),
               ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              sliver: SliverList.separated(
-                itemCount: ponude.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 14),
-                itemBuilder: (context, indeks) {
-                  final ponuda = ponude[indeks];
-                  return KarticaPonude(
-                    key: ValueKey(ponuda.id),
-                    ponuda: ponuda,
-                    univerzitet: podaci.univerzitet(ponuda.idUniverziteta),
-                    preostaloMesta: podaci.slobodnaMesta(ponuda),
-                    jeNova: podaci.jeNova(ponuda),
-                    onTap: () => context.push('/ponude/${ponuda.id.vrednost}'),
-                  );
-                },
+            ),
+            SliverToBoxAdapter(child: _filteriRed()),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 20, 18, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Expanded(
+                      child: Semantics(header: true, child: Text('Najnovije ponude', style: tekst.titleLarge)),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('Ukupno: ${ponude.length}', style: tekst.bodySmall?.copyWith(color: Boje.sporedniTekst)),
+                  ],
+                ),
               ),
             ),
-        ],
+            if (ponude.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Text(
+                    'Nema ponuda za izabranu pretragu.',
+                    textAlign: TextAlign.center,
+                    style: tekst.bodyLarge?.copyWith(color: Boje.sporedniTekst),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                sliver: SliverList.separated(
+                  itemCount: ponude.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
+                  itemBuilder: (context, indeks) {
+                    final ponuda = ponude[indeks];
+                    return KarticaPonude(
+                      key: ValueKey(ponuda.id),
+                      ponuda: ponuda,
+                      univerzitet: podaci.univerzitet(ponuda.idUniverziteta),
+                      preostaloMesta: podaci.slobodnaMesta(ponuda),
+                      jeNova: podaci.jeNova(ponuda),
+                      onTap: () => context.push('/ponude/${ponuda.id.vrednost}'),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -269,7 +281,7 @@ class _PonudeState extends State<_Ponude> {
 class _Pozdrav extends StatelessWidget {
   const _Pozdrav({required this.ime, required this.meni});
 
-  final String ime;
+  final String? ime;
   final Widget meni;
 
   @override
@@ -300,7 +312,10 @@ class _Pozdrav extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        Text('Zdravo, $ime', style: tekst.bodyMedium?.copyWith(color: Boje.bela.withValues(alpha: 0.85))),
+        Text(
+          ime == null ? 'Zdravo!' : 'Zdravo, $ime',
+          style: tekst.bodyMedium?.copyWith(color: Boje.bela.withValues(alpha: 0.85)),
+        ),
         const SizedBox(height: 4),
         Semantics(
           header: true,
