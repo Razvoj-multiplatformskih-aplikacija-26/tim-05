@@ -81,6 +81,21 @@ void main() {
     expect(rezultat.greskaIliNull, const PrevisePrijava(3));
   });
 
+  test('izmena već poslate prijave: novo pismo, prijava ostaje poslata', () async {
+    final telefon = Klijent();
+    final marko = await telefon.prijaviSe('student2');
+
+    final rezultat =
+        await SacuvajPrijavu(ponude: telefon.ponude, prijave: telefon.prijave, studenti: telefon.studenti, sat: sat)(
+          ko: marko,
+          idPrijave: const IdPrijave('p-25'),
+          pismo: MotivacionoPismo.proveri('Dopunjeno pismo: TU München zbog mašinskog učenja.').vrednostIliNull!,
+        );
+
+    expect(rezultat.greskaIliNull, isNull);
+    expect(rezultat.vrednostIliNull?.stanje, isA<Poslata>());
+    expect(rezultat.vrednostIliNull?.motivacionoPismo.tekst, startsWith('Dopunjeno pismo'));
+  });
   test('tuđ zapis: drugi student ne može da povuče Andrejevu prijavu', () async {
     final telefon = Klijent();
     final marko = await telefon.prijaviSe('student2');

@@ -150,7 +150,9 @@ void main() {
     test('nova prijava u pripremi salje submit: false, a poslata submit: true', () {
       expect(prijava(const UPripremi()).toNovaDto().posalji, isFalse);
       expect(prijava(Poslata(kada: kada)).toNovaDto().posalji, isTrue);
-      expect(prijava(Poslata(kada: kada)).toIzmenaDto().posalji, isTrue);
+      expect(prijava(Poslata(kada: kada)).toIzmenaDto(iz: const UPripremi()).posalji, isTrue);
+      expect(prijava(Poslata(kada: kada)).toIzmenaDto(iz: Poslata(kada: kada)).posalji, isFalse);
+      expect(prijava(const UPripremi()).toIzmenaDto(iz: const UPripremi()).posalji, isFalse);
       expect(prijava(const UPripremi()).toNovaDto().idPonude, 'po-1');
     });
   });

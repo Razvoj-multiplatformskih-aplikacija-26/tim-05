@@ -188,6 +188,20 @@ void main() {
         expect(zahtevi[5].$2, {'letter': pismo.tekst, 'submit': true});
       },
     );
+        test('izmena već poslate prijave nije novo slanje: submit: false', () async {
+      Map<String, Object?>? telo;
+      final server = MockClient((zahtev) async {
+        telo = jsonDecode(zahtev.body) as Map<String, Object?>;
+        return jsonOdgovor(prijavaJson('submitted'));
+      });
+
+      await HttpPrijavaRepository(klijent(server)).sacuvaj(
+        prijava(Poslata(kada: kada)),
+        iz: Poslata(kada: kada),
+      );
+
+      expect(telo, {'letter': pismo.tekst, 'submit': false});
+    });
 
     test('nova prijava ne šalje studenta ni id: to određuje server', () async {
       Map<String, Object?>? telo;

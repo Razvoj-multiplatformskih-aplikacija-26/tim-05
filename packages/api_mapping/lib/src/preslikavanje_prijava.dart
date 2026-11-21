@@ -67,8 +67,11 @@ extension PrijavaUDto on Prijava {
     posalji: stanje is Poslata,
   );
 
-  IzmenaPrijaveDto toIzmenaDto() =>
-      IzmenaPrijaveDto(motivacionoPismo: motivacionoPismo.tekst, napomena: napomena, posalji: stanje is Poslata);
+  IzmenaPrijaveDto toIzmenaDto({required StanjePrijave iz}) => IzmenaPrijaveDto(
+    motivacionoPismo: motivacionoPismo.tekst,
+    napomena: napomena,
+    posalji: stanje is Poslata && iz is UPripremi,
+  );
 }
 
 extension PrijavaDtoUDomen on PrijavaDto {
