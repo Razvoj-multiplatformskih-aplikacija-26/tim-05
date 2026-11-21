@@ -57,7 +57,7 @@ final class HttpPrijavaRepository implements PrijavaRepository {
   Future<Rezultat<Prijava>> sacuvaj(Prijava nova, {required StanjePrijave iz}) async {
     final id = nova.id.vrednost;
     final odgovor = await switch (nova.stanje) {
-      UPripremi() || Poslata() => _api.post(ApiPutanje.izmena(id), telo: nova.toIzmenaDto().toJson()),
+      UPripremi() || Poslata() => _api.post(ApiPutanje.izmena(id), telo: nova.toIzmenaDto(iz: iz).toJson()),
       Povucena() when iz is Prihvacena => _api.post(ApiPutanje.odbijanjeMesta(id)),
       Povucena() => _api.post(ApiPutanje.povlacenje(id)),
       Prihvacena() => _api.post(ApiPutanje.prihvatanje(id)),
